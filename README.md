@@ -1,5 +1,15 @@
 # buswatch
 
+```
+    ____  __  _______ _       _____  ______________  __
+   / __ )/ / / / ___/| |     / /   |/_  __/ ____/ / / /
+  / __  / / / /\__ \ | | /| / / /| | / / / /   / /_/ / 
+ / /_/ / /_/ /___/ / | |/ |/ / ___ |/ / / /___/ __  /  
+/_____/\____//____/  |__/|__/_/  |_/_/  \____/_/ /_/   
+                                                        
+        ~~~ watching your message bus ~~~
+```
+
 [![Crates.io](https://img.shields.io/crates/v/buswatch.svg)](https://crates.io/crates/buswatch)
 [![Documentation](https://docs.rs/buswatch/badge.svg)](https://docs.rs/buswatch)
 [![License](https://img.shields.io/crates/l/buswatch.svg)](LICENSE)
