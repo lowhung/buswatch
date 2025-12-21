@@ -18,7 +18,7 @@ use std::collections::BTreeMap;
 use std::thread;
 use std::time::Duration;
 
-use caryatid_doctor::{
+use monitor_tui::{
     ChannelSource, DataSource, SerializedModuleState, SerializedReadStreamState,
     SerializedWriteStreamState,
 };

@@ -1,20 +1,24 @@
 [package]
-name = "caryatid-doctor"
+name = "monitor-tui"
 version = "0.1.0"
 edition = "2021"
-authors = ["Pragma"]
+rust-version = "1.70"
+authors = ["Matthew Hounslow"]
 description = "Diagnostic TUI for monitoring Caryatid message bus activity"
 license = "Apache-2.0"
-repository = "https://github.com/pragma-org/caryatid-doctor"
+repository = "https://github.com/lowhung/monitor-tui"
+documentation = "https://docs.rs/monitor-tui"
+readme = "README.md"
 keywords = ["caryatid", "monitoring", "tui", "diagnostics", "message-bus"]
 categories = ["command-line-utilities", "development-tools::debugging"]
+exclude = [".github/", ".gitignore"]
 
 [lib]
-name = "caryatid_doctor"
+name = "monitor_tui"
 path = "src/lib.rs"
 
 [[bin]]
-name = "caryatid-doctor"
+name = "monitor-tui"
 path = "src/main.rs"
 
 [dependencies]

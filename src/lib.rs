@@ -1,7 +1,7 @@
 // Library crate: public API items may not be used by the binary
 #![allow(unused)]
 
-//! # caryatid-doctor
+//! # monitor-tui
 //!
 //! A diagnostic TUI and library for monitoring Caryatid message bus activity.
 //!
@@ -51,16 +51,16 @@
 //!
 //! ```bash
 //! # Monitor a JSON file (produced by caryatid's Monitor)
-//! caryatid-doctor --file monitor.json
+//! monitor-tui --file monitor.json
 //!
 //! # Monitor via TCP connection
-//! caryatid-doctor --connect localhost:9090
+//! monitor-tui --connect localhost:9090
 //! ```
 //!
 //! ### As a library with file source
 //!
 //! ```
-//! use caryatid_doctor::{App, FileSource, Thresholds};
+//! use monitor_tui::{App, FileSource, Thresholds};
 //!
 //! let source = Box::new(FileSource::new("monitor.json"));
 //! let app = App::new(source, Thresholds::default());
@@ -70,7 +70,7 @@
 //!
 //! ```no_run
 //! use std::io::Cursor;
-//! use caryatid_doctor::{App, StreamSource, Thresholds};
+//! use monitor_tui::{App, StreamSource, Thresholds};
 //!
 //! # tokio_test::block_on(async {
 //! // Example with a cursor (in practice, use TcpStream)
@@ -84,7 +84,7 @@
 //! ### As a library with channel source (for message bus integration)
 //!
 //! ```
-//! use caryatid_doctor::{App, ChannelSource, Thresholds};
+//! use monitor_tui::{App, ChannelSource, Thresholds};
 //!
 //! // Create a channel for receiving snapshots
 //! let (tx, source) = ChannelSource::create("rabbitmq://localhost");
@@ -96,7 +96,7 @@
 //! ### Bridging from a message bus
 //!
 //! ```no_run
-//! use caryatid_doctor::StreamSource;
+//! use monitor_tui::StreamSource;
 //! use tokio::sync::mpsc;
 //!
 //! # tokio_test::block_on(async {

@@ -17,7 +17,7 @@ use super::{DataSource, MonitorSnapshot};
 /// # Example
 ///
 /// ```
-/// use caryatid_doctor::ChannelSource;
+/// use monitor_tui::ChannelSource;
 ///
 /// // Create a channel pair
 /// let (tx, source) = ChannelSource::create("rabbitmq://localhost");

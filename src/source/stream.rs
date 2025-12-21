@@ -20,7 +20,7 @@ use super::{DataSource, MonitorSnapshot};
 ///
 /// ```
 /// use std::io::Cursor;
-/// use caryatid_doctor::StreamSource;
+/// use monitor_tui::StreamSource;
 ///
 /// # tokio_test::block_on(async {
 /// let data = b"{}\n";
