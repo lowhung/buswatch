@@ -11,7 +11,7 @@
 //! # Usage
 //!
 //! ```bash
-//! caryatid-doctor --subscribe config.toml --topic caryatid.monitor.snapshot
+//! buswatch --subscribe config.toml --topic caryatid.monitor.snapshot
 //! ```
 
 use crate::source::{ChannelSource, MonitorSnapshot};
@@ -85,7 +85,7 @@ pub async fn create_subscriber(
     let mut consumer = channel
         .basic_consume(
             queue.name().as_str(),
-            "caryatid-doctor",
+            "buswatch",
             BasicConsumeOptions {
                 no_ack: true,
                 ..Default::default()

@@ -31,7 +31,7 @@ use app::{App, View};
 use source::{DataSource, FileSource, StreamSource};
 
 #[derive(Parser, Debug)]
-#[command(name = "caryatid-doctor")]
+#[command(name = "buswatch")]
 #[command(about = "Diagnostic TUI for monitoring Caryatid message bus activity")]
 struct Args {
     /// Path to monitor.json file

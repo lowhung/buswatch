@@ -1,6 +1,6 @@
 //! Example: Monitoring from a JSON file
 //!
-//! This example demonstrates how to use caryatid-doctor to monitor
+//! This example demonstrates how to use buswatch to monitor
 //! a Caryatid message bus by reading snapshots from a JSON file.
 //!
 //! The file should contain a JSON object mapping module names to their state,

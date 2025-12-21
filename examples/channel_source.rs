@@ -1,6 +1,6 @@
 //! Example: Monitoring via a channel
 //!
-//! This example demonstrates how to integrate caryatid-doctor into your
+//! This example demonstrates how to integrate buswatch into your
 //! own application by sending snapshots through a channel.
 //!
 //! This is useful when you want to:
