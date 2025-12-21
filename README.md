@@ -1,8 +1,20 @@
 # caryatid-doctor
 
+[![Crates.io](https://img.shields.io/crates/v/caryatid-doctor.svg)](https://crates.io/crates/caryatid-doctor)
+[![Documentation](https://docs.rs/caryatid-doctor/badge.svg)](https://docs.rs/caryatid-doctor)
+[![License](https://img.shields.io/crates/l/caryatid-doctor.svg)](LICENSE)
+
 A diagnostic TUI for monitoring Caryatid message bus activity.
 
 ## Installation
+
+### From crates.io
+
+```bash
+cargo install caryatid-doctor
+```
+
+### From source
 
 ```bash
 cargo build -p caryatid-doctor --release
@@ -94,3 +106,52 @@ Modules are marked unhealthy based on:
 - **Unread count**: Backlog of unread messages
 
 A module's status is the worst across all its topics.
+
+## Library Usage
+
+caryatid-doctor can also be used as a library for building custom monitoring solutions.
+
+Add to your `Cargo.toml`:
+
+```toml
+[dependencies]
+caryatid-doctor = "0.1"
+```
+
+### Examples
+
+See the [examples](examples/) directory for runnable examples:
+
+- [`file_source.rs`](examples/file_source.rs) - Monitor from a JSON file
+- [`channel_source.rs`](examples/channel_source.rs) - Receive snapshots via channel
+- [`stream_source.rs`](examples/stream_source.rs) - Connect to a TCP stream
+
+```rust
+use caryatid_doctor::{App, FileSource, Thresholds};
+
+let source = Box::new(FileSource::new("monitor.json"));
+let app = App::new(source, Thresholds::default());
+```
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| `subscribe` | RabbitMQ integration via [lapin](https://crates.io/crates/lapin) |
+
+Enable features:
+
+```bash
+cargo build --features subscribe
+```
+
+Or in `Cargo.toml`:
+
+```toml
+[dependencies]
+caryatid-doctor = { version = "0.1", features = ["subscribe"] }
+```
+
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
