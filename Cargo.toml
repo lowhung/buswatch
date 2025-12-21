@@ -2,10 +2,10 @@
 name = "caryatid-doctor"
 version = "0.1.0"
 edition = "2021"
-authors = ["Acropolis Team"]
+authors = ["Pragma"]
 description = "Diagnostic TUI for monitoring Caryatid message bus activity"
 license = "Apache-2.0"
-repository = "https://github.com/pragma-org/caryatid"
+repository = "https://github.com/pragma-org/caryatid-doctor"
 keywords = ["caryatid", "monitoring", "tui", "diagnostics", "message-bus"]
 categories = ["command-line-utilities", "development-tools::debugging"]
 
@@ -18,26 +18,23 @@ name = "caryatid-doctor"
 path = "src/main.rs"
 
 [dependencies]
-clap = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-tokio = { workspace = true }
-anyhow = { workspace = true }
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
 ratatui = "0.29"
 crossterm = "0.28"
 terminal-light = "1.4"
-config = { workspace = true }
+config = "0.15"
 
-# Caryatid integration (optional feature)
-caryatid_sdk = { workspace = true, optional = true }
-caryatid_process = { workspace = true, optional = true }
-tracing = { workspace = true, optional = true }
-tracing-subscriber = { version = "0.3", optional = true }
-async-trait = { version = "0.1", optional = true }
+# RabbitMQ subscription (optional feature)
+lapin = { version = "2", optional = true }
+futures-util = { version = "0.3", optional = true }
 
 [features]
 default = []
-subscribe = ["caryatid_sdk", "caryatid_process", "tracing", "tracing-subscriber", "async-trait"]
+subscribe = ["lapin", "futures-util"]
 
 [dev-dependencies]
 tempfile = "3"

@@ -146,13 +146,15 @@ pub fn render_overlay(frame: &mut Frame, app: &App, area: Rect) {
             Constraint::Length(8),  // Status
         ];
 
-        let reads_table = Table::new(reads_rows, reads_widths).header(reads_header).block(
-            Block::default()
-                .title(format!(" Reads ({}) ", module.reads.len()))
-                .borders(Borders::ALL)
-                .border_type(app.theme.border_type)
-                .border_style(Style::default().fg(app.theme.border)),
-        );
+        let reads_table = Table::new(reads_rows, reads_widths)
+            .header(reads_header)
+            .block(
+                Block::default()
+                    .title(format!(" Reads ({}) ", module.reads.len()))
+                    .borders(Borders::ALL)
+                    .border_type(app.theme.border_type)
+                    .border_style(Style::default().fg(app.theme.border)),
+            );
 
         frame.render_widget(reads_table, content_chunks[0]);
     } else {
@@ -204,13 +206,15 @@ pub fn render_overlay(frame: &mut Frame, app: &App, area: Rect) {
             Constraint::Length(8),  // Status
         ];
 
-        let writes_table = Table::new(writes_rows, writes_widths).header(writes_header).block(
-            Block::default()
-                .title(format!(" Writes ({}) ", module.writes.len()))
-                .borders(Borders::ALL)
-                .border_type(app.theme.border_type)
-                .border_style(Style::default().fg(app.theme.border)),
-        );
+        let writes_table = Table::new(writes_rows, writes_widths)
+            .header(writes_header)
+            .block(
+                Block::default()
+                    .title(format!(" Writes ({}) ", module.writes.len()))
+                    .borders(Borders::ALL)
+                    .border_type(app.theme.border_type)
+                    .border_style(Style::default().fg(app.theme.border)),
+            );
 
         frame.render_widget(writes_table, content_chunks[1]);
     } else {

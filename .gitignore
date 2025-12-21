@@ -1,1 +1,7 @@
 .DS_STORE
+target
+Cargo.lock
+.vscode
+README.html
+/.direnv/
+.idea

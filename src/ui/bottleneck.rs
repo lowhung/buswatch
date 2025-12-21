@@ -82,9 +82,14 @@ pub fn render(frame: &mut Frame, app: &mut App, area: Rect) {
     );
 
     // Count by severity
-    let critical_count =
-        sorted.iter().filter(|(_, t)| t.status() == HealthStatus::Critical).count();
-    let warning_count = sorted.iter().filter(|(_, t)| t.status() == HealthStatus::Warning).count();
+    let critical_count = sorted
+        .iter()
+        .filter(|(_, t)| t.status() == HealthStatus::Critical)
+        .count();
+    let warning_count = sorted
+        .iter()
+        .filter(|(_, t)| t.status() == HealthStatus::Warning)
+        .count();
 
     // Build header row with sort indicators
     let header = Row::new(vec![
@@ -109,8 +114,10 @@ pub fn render(frame: &mut Frame, app: &mut App, area: Rect) {
                 HealthStatus::Healthy => "OK",
             };
 
-            let pending_info =
-                topic.pending_for().map(format_duration).unwrap_or_else(|| "-".to_string());
+            let pending_info = topic
+                .pending_for()
+                .map(format_duration)
+                .unwrap_or_else(|| "-".to_string());
 
             let unread_info = if let UnhealthyTopic::Read(r) = topic {
                 r.unread
@@ -224,7 +231,9 @@ fn render_healthy_message(frame: &mut Frame, app: &App, area: Rect) {
             Span::styled("    ✓ ", Style::default().fg(app.theme.healthy)),
             Span::styled(
                 "All systems healthy!",
-                Style::default().fg(app.theme.healthy).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(app.theme.healthy)
+                    .add_modifier(Modifier::BOLD),
             ),
         ]),
         Line::from(""),

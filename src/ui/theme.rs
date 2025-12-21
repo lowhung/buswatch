@@ -44,9 +44,15 @@ impl Theme {
             critical: Color::Red,
             healthy: Color::Green,
             border: Color::Gray,
-            header: Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-            selected: Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD),
-            tab_active: Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            header: Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+            selected: Style::default()
+                .bg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
+            tab_active: Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
             tab_inactive: Style::default().fg(Color::Gray),
             border_type: BorderType::Rounded,
         }
@@ -60,9 +66,15 @@ impl Theme {
             critical: Color::Red,
             healthy: Color::Green,
             border: Color::DarkGray,
-            header: Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD),
-            selected: Style::default().bg(Color::LightBlue).add_modifier(Modifier::BOLD),
-            tab_active: Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD),
+            header: Style::default()
+                .fg(Color::Blue)
+                .add_modifier(Modifier::BOLD),
+            selected: Style::default()
+                .bg(Color::LightBlue)
+                .add_modifier(Modifier::BOLD),
+            tab_active: Style::default()
+                .fg(Color::Blue)
+                .add_modifier(Modifier::BOLD),
             tab_inactive: Style::default().fg(Color::DarkGray),
             border_type: BorderType::Rounded,
         }
@@ -82,9 +94,9 @@ impl Theme {
         match status {
             HealthStatus::Healthy => Style::default().fg(self.healthy),
             HealthStatus::Warning => Style::default().fg(self.warning),
-            HealthStatus::Critical => {
-                Style::default().fg(self.critical).add_modifier(Modifier::BOLD)
-            }
+            HealthStatus::Critical => Style::default()
+                .fg(self.critical)
+                .add_modifier(Modifier::BOLD),
         }
     }
 }

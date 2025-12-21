@@ -31,11 +31,17 @@ impl DataFlowGraph {
         for module in &data.modules {
             for write in &module.writes {
                 topic_set.insert(write.topic.clone());
-                producers.entry(write.topic.clone()).or_default().push(module.name.clone());
+                producers
+                    .entry(write.topic.clone())
+                    .or_default()
+                    .push(module.name.clone());
             }
             for read in &module.reads {
                 topic_set.insert(read.topic.clone());
-                consumers.entry(read.topic.clone()).or_default().push(module.name.clone());
+                consumers
+                    .entry(read.topic.clone())
+                    .or_default()
+                    .push(module.name.clone());
             }
         }
 

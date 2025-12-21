@@ -78,7 +78,9 @@ pub fn render_header(frame: &mut Frame, app: &App, area: Rect) {
         if critical > 0 {
             Span::styled(
                 format!("{}", critical),
-                Style::default().fg(app.theme.critical).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(app.theme.critical)
+                    .add_modifier(Modifier::BOLD),
             )
         } else {
             Span::styled("0", Style::default().add_modifier(Modifier::DIM))

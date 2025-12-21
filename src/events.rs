@@ -207,8 +207,11 @@ pub fn handle_mouse_event(app: &mut App, mouse: MouseEvent, content_start_row: u
                     View::Summary => {
                         if let Some(ref data) = app.data {
                             // Get filtered module count
-                            let filtered_count =
-                                data.modules.iter().filter(|m| app.matches_filter(&m.name)).count();
+                            let filtered_count = data
+                                .modules
+                                .iter()
+                                .filter(|m| app.matches_filter(&m.name))
+                                .count();
                             // Set visual index directly
                             if item_row < filtered_count {
                                 app.selected_module_index = item_row;

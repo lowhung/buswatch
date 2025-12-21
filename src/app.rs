@@ -320,7 +320,10 @@ impl App {
         if self.filter_text.is_empty() {
             return data.modules.len();
         }
-        data.modules.iter().filter(|m| self.matches_filter(&m.name)).count()
+        data.modules
+            .iter()
+            .filter(|m| self.matches_filter(&m.name))
+            .count()
     }
 
     /// Get the actual module index from the visual index (after sorting/filtering).
@@ -446,7 +449,8 @@ impl App {
         if self.filter_text.is_empty() {
             return true;
         }
-        name.to_lowercase().contains(&self.filter_text.to_lowercase())
+        name.to_lowercase()
+            .contains(&self.filter_text.to_lowercase())
     }
 
     /// Get count of bottlenecks after applying filter.
@@ -486,12 +490,21 @@ impl App {
             serde_json::json!(data.modules.len()),
         );
 
-        let healthy =
-            data.modules.iter().filter(|m| m.health == crate::data::HealthStatus::Healthy).count();
-        let warning =
-            data.modules.iter().filter(|m| m.health == crate::data::HealthStatus::Warning).count();
-        let critical =
-            data.modules.iter().filter(|m| m.health == crate::data::HealthStatus::Critical).count();
+        let healthy = data
+            .modules
+            .iter()
+            .filter(|m| m.health == crate::data::HealthStatus::Healthy)
+            .count();
+        let warning = data
+            .modules
+            .iter()
+            .filter(|m| m.health == crate::data::HealthStatus::Warning)
+            .count();
+        let critical = data
+            .modules
+            .iter()
+            .filter(|m| m.health == crate::data::HealthStatus::Critical)
+            .count();
 
         summary.insert("healthy".to_string(), serde_json::json!(healthy));
         summary.insert("warning".to_string(), serde_json::json!(warning));

@@ -56,8 +56,12 @@ pub fn render(frame: &mut Frame, app: &mut App, area: Rect) {
     };
 
     // Get filtered and sorted module indices
-    let mut modules: Vec<(usize, &ModuleData)> =
-        data.modules.iter().enumerate().filter(|(_, m)| app.matches_filter(&m.name)).collect();
+    let mut modules: Vec<(usize, &ModuleData)> = data
+        .modules
+        .iter()
+        .enumerate()
+        .filter(|(_, m)| app.matches_filter(&m.name))
+        .collect();
     sort_modules_by(&mut modules, app.sort_column, app.sort_ascending);
 
     let header = Row::new(vec![
@@ -117,8 +121,12 @@ pub fn render(frame: &mut Frame, app: &mut App, area: Rect) {
                 Cell::from(format_count(m.total_read)),
                 Cell::from(rate),
                 Cell::from(format_count(m.total_written)),
-                Cell::from(max_pending.map(format_duration).unwrap_or_else(|| "-".to_string()))
-                    .style(pending_style),
+                Cell::from(
+                    max_pending
+                        .map(format_duration)
+                        .unwrap_or_else(|| "-".to_string()),
+                )
+                .style(pending_style),
                 Cell::from(if total_unread > 0 {
                     format_count(total_unread)
                 } else {
@@ -145,7 +153,9 @@ pub fn render(frame: &mut Frame, app: &mut App, area: Rect) {
 
     // selected_module_index is now treated as visual index directly
     // Clamp it to valid range
-    let selected_visual_index = app.selected_module_index.min(modules.len().saturating_sub(1));
+    let selected_visual_index = app
+        .selected_module_index
+        .min(modules.len().saturating_sub(1));
 
     let sort_indicator = match app.sort_column {
         SortColumn::Name => "name",
@@ -257,7 +267,10 @@ fn render_sparkline(data: &[u8]) -> String {
     // Take last 8 values
     let values: Vec<u8> = data.iter().rev().take(8).rev().copied().collect();
 
-    values.iter().map(|&v| SPARKLINE_CHARS[v.min(7) as usize]).collect()
+    values
+        .iter()
+        .map(|&v| SPARKLINE_CHARS[v.min(7) as usize])
+        .collect()
 }
 
 /// Format large numbers with K/M suffixes

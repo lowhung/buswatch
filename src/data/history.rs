@@ -79,8 +79,11 @@ impl History {
         }
 
         // Compute deltas between consecutive values
-        let deltas: Vec<i64> =
-            values.iter().zip(values.iter().skip(1)).map(|(a, b)| *b as i64 - *a as i64).collect();
+        let deltas: Vec<i64> = values
+            .iter()
+            .zip(values.iter().skip(1))
+            .map(|(a, b)| *b as i64 - *a as i64)
+            .collect();
 
         if deltas.is_empty() {
             return Vec::new();

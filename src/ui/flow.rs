@@ -84,7 +84,9 @@ pub fn render(frame: &mut Frame, app: &mut App, area: Rect) {
     for (i, name) in module_names.iter().enumerate() {
         let display = truncate(name, col_w - 1);
         let style = if i == app.selected_module_index {
-            Style::default().fg(app.theme.highlight).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(app.theme.highlight)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default().add_modifier(Modifier::DIM)
         };
@@ -113,7 +115,9 @@ pub fn render(frame: &mut Frame, app: &mut App, area: Rect) {
     for (row_idx, row_name) in module_names.iter().enumerate() {
         let is_selected = row_idx == app.selected_module_index;
         let row_style = if is_selected {
-            Style::default().fg(app.theme.highlight).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(app.theme.highlight)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default()
         };
@@ -210,18 +214,30 @@ pub fn render(frame: &mut Frame, app: &mut App, area: Rect) {
         let total_out: usize = selected
             .writes
             .iter()
-            .filter_map(|w| graph.consumers.get(&w.topic).map(|c| c.len().saturating_sub(1)))
+            .filter_map(|w| {
+                graph
+                    .consumers
+                    .get(&w.topic)
+                    .map(|c| c.len().saturating_sub(1))
+            })
             .sum();
         let total_in: usize = selected
             .reads
             .iter()
-            .filter_map(|r| graph.producers.get(&r.topic).map(|p| p.len().saturating_sub(1)))
+            .filter_map(|r| {
+                graph
+                    .producers
+                    .get(&r.topic)
+                    .map(|p| p.len().saturating_sub(1))
+            })
             .sum();
 
         detail_lines.push(Line::from(vec![
             Span::styled(
                 format!(" {} ", selected.name),
-                Style::default().fg(app.theme.highlight).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(app.theme.highlight)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled("│ ", Style::default().fg(app.theme.border)),
             Span::styled(
@@ -253,7 +269,10 @@ pub fn render(frame: &mut Frame, app: &mut App, area: Rect) {
                 .consumers
                 .get(&w.topic)
                 .map(|v| {
-                    v.iter().filter(|s| s.as_str() != selected.name).map(|s| s.as_str()).collect()
+                    v.iter()
+                        .filter(|s| s.as_str() != selected.name)
+                        .map(|s| s.as_str())
+                        .collect()
                 })
                 .unwrap_or_default();
 
@@ -280,7 +299,10 @@ pub fn render(frame: &mut Frame, app: &mut App, area: Rect) {
                 .producers
                 .get(&r.topic)
                 .map(|v| {
-                    v.iter().filter(|s| s.as_str() != selected.name).map(|s| s.as_str()).collect()
+                    v.iter()
+                        .filter(|s| s.as_str() != selected.name)
+                        .map(|s| s.as_str())
+                        .collect()
                 })
                 .unwrap_or_default();
 

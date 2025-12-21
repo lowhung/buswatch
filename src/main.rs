@@ -338,12 +338,21 @@ fn export_to_file(
         serde_json::json!(monitor_data.modules.len()),
     );
 
-    let healthy =
-        monitor_data.modules.iter().filter(|m| m.health == data::HealthStatus::Healthy).count();
-    let warning =
-        monitor_data.modules.iter().filter(|m| m.health == data::HealthStatus::Warning).count();
-    let critical =
-        monitor_data.modules.iter().filter(|m| m.health == data::HealthStatus::Critical).count();
+    let healthy = monitor_data
+        .modules
+        .iter()
+        .filter(|m| m.health == data::HealthStatus::Healthy)
+        .count();
+    let warning = monitor_data
+        .modules
+        .iter()
+        .filter(|m| m.health == data::HealthStatus::Warning)
+        .count();
+    let critical = monitor_data
+        .modules
+        .iter()
+        .filter(|m| m.health == data::HealthStatus::Critical)
+        .count();
 
     summary.insert("healthy".to_string(), serde_json::json!(healthy));
     summary.insert("warning".to_string(), serde_json::json!(warning));
