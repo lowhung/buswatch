@@ -25,7 +25,7 @@ use std::fmt::Debug;
 /// # Example
 ///
 /// ```
-/// use monitor_tui::{FileSource, DataSource};
+/// use buswatch::{FileSource, DataSource};
 ///
 /// let mut source = FileSource::new("monitor.json");
 /// if let Some(snapshot) = source.poll() {

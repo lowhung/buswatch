@@ -24,7 +24,7 @@ use std::time::Duration;
 
 use tokio::net::TcpStream;
 
-use monitor_tui::{DataSource, StreamSource};
+use buswatch::{DataSource, StreamSource};
 
 #[tokio::main]
 async fn main() {

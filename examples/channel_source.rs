@@ -18,7 +18,7 @@ use std::collections::BTreeMap;
 use std::thread;
 use std::time::Duration;
 
-use monitor_tui::{
+use buswatch::{
     ChannelSource, DataSource, SerializedModuleState, SerializedReadStreamState,
     SerializedWriteStreamState,
 };

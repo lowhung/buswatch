@@ -17,7 +17,7 @@ use std::io::{self, Write};
 use std::thread;
 use std::time::Duration;
 
-use monitor_tui::{DataSource, FileSource};
+use buswatch::{DataSource, FileSource};
 
 fn main() {
     let path = env::args().nth(1).unwrap_or_else(|| {

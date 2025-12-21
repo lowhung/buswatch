@@ -17,7 +17,7 @@ use super::{DataSource, MonitorSnapshot};
 /// # Example
 ///
 /// ```
-/// use monitor_tui::ChannelSource;
+/// use buswatch::ChannelSource;
 ///
 /// // Create a channel pair
 /// let (tx, source) = ChannelSource::create("rabbitmq://localhost");

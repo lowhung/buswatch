@@ -1,5 +1,5 @@
 [package]
-name = "monitor-tui"
+name = "buswatch"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.70"
@@ -7,18 +7,18 @@ authors = ["Matthew Hounslow"]
 description = "Diagnostic TUI for monitoring Caryatid message bus activity"
 license = "Apache-2.0"
 repository = "https://github.com/lowhung/monitor-tui"
-documentation = "https://docs.rs/monitor-tui"
+documentation = "https://docs.rs/buswatch"
 readme = "README.md"
 keywords = ["caryatid", "monitoring", "tui", "diagnostics", "message-bus"]
 categories = ["command-line-utilities", "development-tools::debugging"]
 exclude = [".github/", ".gitignore"]
 
 [lib]
-name = "monitor_tui"
+name = "buswatch"
 path = "src/lib.rs"
 
 [[bin]]
-name = "monitor-tui"
+name = "buswatch"
 path = "src/main.rs"
 
 [dependencies]

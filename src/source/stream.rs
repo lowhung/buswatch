@@ -20,7 +20,7 @@ use super::{DataSource, MonitorSnapshot};
 ///
 /// ```
 /// use std::io::Cursor;
-/// use monitor_tui::StreamSource;
+/// use buswatch::StreamSource;
 ///
 /// # tokio_test::block_on(async {
 /// let data = b"{}\n";

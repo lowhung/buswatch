@@ -1,8 +1,8 @@
-# monitor-tui
+# buswatch
 
-[![Crates.io](https://img.shields.io/crates/v/monitor-tui.svg)](https://crates.io/crates/monitor-tui)
-[![Documentation](https://docs.rs/monitor-tui/badge.svg)](https://docs.rs/monitor-tui)
-[![License](https://img.shields.io/crates/l/monitor-tui.svg)](LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/buswatch.svg)](https://crates.io/crates/buswatch)
+[![Documentation](https://docs.rs/buswatch/badge.svg)](https://docs.rs/buswatch)
+[![License](https://img.shields.io/crates/l/buswatch.svg)](LICENSE)
 
 A diagnostic TUI for monitoring Caryatid message bus activity.
 
@@ -11,26 +11,26 @@ A diagnostic TUI for monitoring Caryatid message bus activity.
 ### From crates.io
 
 ```bash
-cargo install monitor-tui
+cargo install buswatch
 ```
 
 ### From source
 
 ```bash
-cargo build -p monitor-tui --release
+cargo build -p buswatch --release
 ```
 
 ## Usage
 
 ```bash
 # Monitor a JSON file (default mode)
-monitor-tui -f monitor.json
+buswatch -f monitor.json
 
 # Connect to a TCP stream
-monitor-tui --connect localhost:9090
+buswatch --connect localhost:9090
 
 # Subscribe to RabbitMQ (requires --features subscribe)
-monitor-tui --subscribe rabbitmq.toml --topic caryatid.monitor.snapshot
+buswatch --subscribe rabbitmq.toml --topic caryatid.monitor.snapshot
 ```
 
 ### Options
@@ -74,7 +74,7 @@ monitor-tui --subscribe rabbitmq.toml --topic caryatid.monitor.snapshot
 Build with the subscribe feature:
 
 ```bash
-cargo build -p monitor-tui --features subscribe --release
+cargo build -p buswatch --features subscribe --release
 ```
 
 Create a config file:
@@ -109,13 +109,13 @@ A module's status is the worst across all its topics.
 
 ## Library Usage
 
-monitor-tui can also be used as a library for building custom monitoring solutions.
+buswatch can also be used as a library for building custom monitoring solutions.
 
 Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-monitor-tui = "0.1"
+buswatch = "0.1"
 ```
 
 ### Examples
@@ -127,7 +127,7 @@ See the [examples](examples/) directory for runnable examples:
 - [`stream_source.rs`](examples/stream_source.rs) - Connect to a TCP stream
 
 ```rust
-use monitor_tui::{App, FileSource, Thresholds};
+use buswatch::{App, FileSource, Thresholds};
 
 let source = Box::new(FileSource::new("monitor.json"));
 let app = App::new(source, Thresholds::default());
@@ -149,7 +149,7 @@ Or in `Cargo.toml`:
 
 ```toml
 [dependencies]
-monitor-tui = { version = "0.1", features = ["subscribe"] }
+buswatch = { version = "0.1", features = ["subscribe"] }
 ```
 
 ## License
