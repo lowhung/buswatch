@@ -170,7 +170,7 @@ mod tests {
     use std::io::Cursor;
 
     fn sample_json() -> &'static str {
-        r#"{"TestModule":{"reads":{"input":{"read":100}},"writes":{"output":{"written":50}}}}"#
+        r#"{"version":{"major":1,"minor":0},"timestamp_ms":1703160000000,"modules":{"TestModule":{"reads":{"input":{"count":100}},"writes":{"output":{"count":50}}}}}"#
     }
 
     #[tokio::test]
@@ -187,7 +187,7 @@ mod tests {
         // Should receive the snapshot
         let snapshot = source.poll();
         assert!(snapshot.is_some());
-        assert!(snapshot.unwrap().contains_key("TestModule"));
+        assert!(snapshot.unwrap().modules.contains_key("TestModule"));
     }
 
     #[tokio::test]
@@ -228,7 +228,7 @@ mod tests {
 
         let snapshot = source.poll();
         assert!(snapshot.is_some());
-        assert!(snapshot.unwrap().contains_key("TestModule"));
+        assert!(snapshot.unwrap().modules.contains_key("TestModule"));
     }
 
     #[tokio::test]

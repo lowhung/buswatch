@@ -9,7 +9,7 @@
 //!
 //! ```bash
 //! # Example using netcat to send a test snapshot:
-//! echo '{"TestModule": {"reads": {}, "writes": {}}}' | nc -l 9090
+//! echo '{"version":{"major":1,"minor":0},"timestamp_ms":0,"modules":{"TestModule":{"reads":{},"writes":{}}}}' | nc -l 9090
 //! ```
 //!
 //! Then run this example:
@@ -56,7 +56,7 @@ async fn main() {
         match source.poll() {
             Some(snapshot) => {
                 println!("Received snapshot with {} modules:", snapshot.len());
-                for (name, state) in &snapshot {
+                for (name, state) in snapshot.iter() {
                     println!(
                         "  - {}: {} read topics, {} write topics",
                         name,

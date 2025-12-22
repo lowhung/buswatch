@@ -9,8 +9,7 @@ use std::time::{Duration, Instant};
 
 use anyhow::Result;
 
-use super::duration::parse_duration;
-use crate::source::MonitorSnapshot;
+use crate::source::{ModuleMetrics, Snapshot};
 
 /// Thresholds for health status computation.
 ///
@@ -128,15 +127,16 @@ impl MonitorData {
 
     /// Parse monitor data from a JSON string.
     pub fn parse(content: &str, thresholds: &Thresholds) -> Result<Self> {
-        let snapshot: MonitorSnapshot = serde_json::from_str(content)?;
+        let snapshot: Snapshot = serde_json::from_str(content)?;
         Ok(Self::from_snapshot(snapshot, thresholds))
     }
 
-    /// Convert a MonitorSnapshot into processed MonitorData.
+    /// Convert a Snapshot into processed MonitorData.
     ///
     /// This is the primary conversion method used by all data sources.
-    pub fn from_snapshot(snapshot: MonitorSnapshot, thresholds: &Thresholds) -> Self {
+    pub fn from_snapshot(snapshot: Snapshot, thresholds: &Thresholds) -> Self {
         let mut modules: Vec<ModuleData> = snapshot
+            .modules
             .into_iter()
             .map(|(name, state)| Self::parse_module(name, state, thresholds))
             .collect();
@@ -150,22 +150,18 @@ impl MonitorData {
         }
     }
 
-    fn parse_module(
-        name: String,
-        state: crate::source::SerializedModuleState,
-        thresholds: &Thresholds,
-    ) -> ModuleData {
+    fn parse_module(name: String, state: ModuleMetrics, thresholds: &Thresholds) -> ModuleData {
         let mut reads: Vec<TopicRead> = state
             .reads
             .into_iter()
             .map(|(topic, r)| {
-                let pending_for = r.pending_for.as_ref().and_then(|s| parse_duration(s).ok());
-                let status = Self::compute_read_status(pending_for, r.unread, thresholds);
+                let pending_for = r.pending.map(|p| p.to_duration());
+                let status = Self::compute_read_status(pending_for, r.backlog, thresholds);
                 TopicRead {
                     topic,
-                    read: r.read,
+                    read: r.count,
                     pending_for,
-                    unread: r.unread,
+                    unread: r.backlog,
                     status,
                 }
             })
@@ -175,11 +171,11 @@ impl MonitorData {
             .writes
             .into_iter()
             .map(|(topic, w)| {
-                let pending_for = w.pending_for.as_ref().and_then(|s| parse_duration(s).ok());
+                let pending_for = w.pending.map(|p| p.to_duration());
                 let status = Self::compute_write_status(pending_for, thresholds);
                 TopicWrite {
                     topic,
-                    written: w.written,
+                    written: w.count,
                     pending_for,
                     status,
                 }

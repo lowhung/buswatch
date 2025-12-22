@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+
 //! # buswatch-types
 //!
 //! Core types for message bus observability. This crate defines the universal

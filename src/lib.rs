@@ -120,6 +120,9 @@ pub mod subscribe;
 pub use app::App;
 pub use data::{HealthStatus, ModuleData, MonitorData, Thresholds, TopicRead, TopicWrite};
 pub use source::{
-    ChannelSource, DataSource, FileSource, MonitorSnapshot, SerializedModuleState,
-    SerializedReadStreamState, SerializedWriteStreamState, StreamSource,
+    ChannelSource, DataSource, FileSource, Microseconds, ModuleMetrics, MonitorSnapshot,
+    ReadMetrics, SchemaVersion, Snapshot, StreamSource, WriteMetrics,
 };
+
+// Re-export buswatch-types for direct access
+pub use buswatch_types;

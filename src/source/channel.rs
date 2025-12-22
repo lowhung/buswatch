@@ -89,8 +89,6 @@ impl DataSource for ChannelSource {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::source::SerializedModuleState;
-    use std::collections::BTreeMap;
 
     #[test]
     fn test_channel_source_poll() {
@@ -105,14 +103,9 @@ mod tests {
         assert!(source.poll().is_none());
 
         // Send a new snapshot
-        let mut new_snapshot = MonitorSnapshot::new();
-        new_snapshot.insert(
-            "TestModule".to_string(),
-            SerializedModuleState {
-                reads: BTreeMap::new(),
-                writes: BTreeMap::new(),
-            },
-        );
+        let new_snapshot = MonitorSnapshot::builder()
+            .module("TestModule", |m| m)
+            .build();
         tx.send(new_snapshot).unwrap();
 
         // Now poll returns the new snapshot

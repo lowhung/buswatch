@@ -109,12 +109,16 @@ mod tests {
 
     fn sample_json() -> &'static str {
         r#"{
-            "TestModule": {
-                "reads": {
-                    "input": { "read": 100, "unread": 5 }
-                },
-                "writes": {
-                    "output": { "written": 50 }
+            "version": { "major": 1, "minor": 0 },
+            "timestamp_ms": 1703160000000,
+            "modules": {
+                "TestModule": {
+                    "reads": {
+                        "input": { "count": 100, "backlog": 5 }
+                    },
+                    "writes": {
+                        "output": { "count": 50 }
+                    }
                 }
             }
         }"#
@@ -139,7 +143,7 @@ mod tests {
         let snapshot = source.poll();
         assert!(snapshot.is_some());
         let snapshot = snapshot.unwrap();
-        assert!(snapshot.contains_key("TestModule"));
+        assert!(snapshot.modules.contains_key("TestModule"));
 
         // Second poll without file change should return None
         let snapshot2 = source.poll();
@@ -162,9 +166,13 @@ mod tests {
         writeln!(
             file,
             r#"{{
-            "ModifiedModule": {{
-                "reads": {{}},
-                "writes": {{}}
+            "version": {{ "major": 1, "minor": 0 }},
+            "timestamp_ms": 1703160000000,
+            "modules": {{
+                "ModifiedModule": {{
+                    "reads": {{}},
+                    "writes": {{}}
+                }}
             }}
         }}"#
         )
@@ -178,7 +186,7 @@ mod tests {
         // Note: This test may be flaky on some filesystems with low mtime resolution
         let snapshot = source.poll();
         if let Some(s) = snapshot {
-            assert!(s.contains_key("ModifiedModule"));
+            assert!(s.modules.contains_key("ModifiedModule"));
         }
     }
 

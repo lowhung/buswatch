@@ -3,8 +3,7 @@
 //! This example demonstrates how to use buswatch to monitor
 //! a Caryatid message bus by reading snapshots from a JSON file.
 //!
-//! The file should contain a JSON object mapping module names to their state,
-//! as produced by Caryatid's Monitor.
+//! The file should contain a JSON object in the buswatch-types format.
 //!
 //! # Usage
 //!
@@ -24,7 +23,7 @@ fn main() {
         eprintln!("Usage: cargo run --example file_source -- <path-to-monitor.json>");
         eprintln!();
         eprintln!("The file should contain a JSON snapshot in the format:");
-        eprintln!(r#"  {{"ModuleName": {{"reads": {{}}, "writes": {{}}}}}}"#);
+        eprintln!(r#"  {{"version": {{"major": 1, "minor": 0}}, "timestamp_ms": 0, "modules": {{}}}}"#);
         std::process::exit(1);
     });
 
@@ -37,9 +36,9 @@ fn main() {
         match source.poll() {
             Some(snapshot) => {
                 println!("Snapshot received with {} modules:", snapshot.len());
-                for (name, state) in &snapshot {
-                    let reads: u64 = state.reads.values().map(|r| r.read).sum();
-                    let writes: u64 = state.writes.values().map(|w| w.written).sum();
+                for (name, state) in snapshot.iter() {
+                    let reads: u64 = state.reads.values().map(|r| r.count).sum();
+                    let writes: u64 = state.writes.values().map(|w| w.count).sum();
                     println!(
                         "  - {}: {} reads across {} topics, {} writes across {} topics",
                         name,
