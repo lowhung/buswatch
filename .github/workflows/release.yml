@@ -10,7 +10,7 @@ env:
 
 jobs:
   audit:
-    name: Audit
+    name: Security Audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
