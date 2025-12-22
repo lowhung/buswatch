@@ -4,10 +4,16 @@ use std::path::PathBuf;
 
 use buswatch_types::Snapshot;
 
+#[cfg(feature = "otel")]
+use std::sync::Arc;
+
+#[cfg(feature = "otel")]
+use crate::otel::{OtelConfig, OtelExporter};
+
 /// Output destination for snapshots.
 ///
 /// Configure where the instrumentor should emit snapshots.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum Output {
     /// Write snapshots to a JSON file.
     ///
@@ -24,6 +30,12 @@ pub enum Output {
     /// Use `Output::channel()` to create this variant and get the receiver.
     #[cfg(feature = "tokio")]
     Channel(tokio::sync::mpsc::Sender<Snapshot>),
+
+    /// Export snapshots as OpenTelemetry metrics via OTLP.
+    ///
+    /// Use `Output::otel()` to create this variant.
+    #[cfg(feature = "otel")]
+    Otel(Arc<OtelExporter>),
 }
 
 impl Output {
@@ -75,6 +87,30 @@ impl Output {
         (Output::Channel(tx), rx)
     }
 
+    /// Create an OpenTelemetry OTLP output.
+    ///
+    /// This exports metrics via OTLP to an OpenTelemetry collector or
+    /// compatible backend (Jaeger, Prometheus, Datadog, etc.).
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use buswatch_sdk::Output;
+    /// use buswatch_sdk::otel::OtelConfig;
+    ///
+    /// let config = OtelConfig::builder()
+    ///     .endpoint("http://localhost:4318")
+    ///     .service_name("my-service")
+    ///     .build();
+    ///
+    /// let output = Output::otel(config).expect("Failed to create OTLP exporter");
+    /// ```
+    #[cfg(feature = "otel")]
+    pub fn otel(config: OtelConfig) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let exporter = OtelExporter::new(&config)?;
+        Ok(Output::Otel(Arc::new(exporter)))
+    }
+
     /// Emit a snapshot to this output.
     #[cfg(feature = "tokio")]
     pub(crate) async fn emit(&self, snapshot: &Snapshot) -> std::io::Result<()> {
@@ -97,6 +133,11 @@ impl Output {
             Output::Channel(tx) => {
                 // Best effort send (don't block if channel is full)
                 let _ = tx.try_send(snapshot.clone());
+            }
+            #[cfg(feature = "otel")]
+            Output::Otel(exporter) => {
+                // Record metrics to OpenTelemetry
+                exporter.record(snapshot);
             }
         }
         Ok(())

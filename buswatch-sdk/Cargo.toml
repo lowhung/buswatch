@@ -15,6 +15,7 @@ categories = ["development-tools::debugging", "development-tools::profiling"]
 [features]
 default = ["tokio"]
 tokio = ["dep:tokio"]
+otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", "tokio"]
 
 [dependencies]
 buswatch-types = { path = "../buswatch-types", features = ["serde"] }
@@ -23,6 +24,11 @@ parking_lot = "0.12"
 
 # Async runtime (optional, for background emission)
 tokio = { version = "1", features = ["time", "sync", "rt", "io-util", "net", "fs", "macros"], optional = true }
+
+# OpenTelemetry (optional, for OTLP export)
+opentelemetry = { version = "0.31", optional = true }
+opentelemetry_sdk = { version = "0.31", features = ["metrics", "rt-tokio"], optional = true }
+opentelemetry-otlp = { version = "0.31", features = ["metrics", "http-proto", "reqwest-blocking-client"], optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
