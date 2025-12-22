@@ -23,8 +23,8 @@ name = "buswatch"
 path = "src/lib.rs"
 
 [dependencies]
-buswatch-tui = { path = "buswatch-tui" }
-buswatch-types = { path = "buswatch-types", features = ["serde"] }
+buswatch-tui = { version = "0.1.1", path = "buswatch-tui" }
+buswatch-types = { version = "0.1.0", path = "buswatch-types", features = ["serde"] }
 
 [features]
 default = ["subscribe"]
