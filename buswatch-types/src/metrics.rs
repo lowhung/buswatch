@@ -95,8 +95,8 @@ impl ReadMetrics {
     ///
     /// Returns false if there's a significant backlog or long pending time.
     pub fn is_healthy(&self, max_backlog: u64, max_pending: Microseconds) -> bool {
-        let backlog_ok = self.backlog.map_or(true, |b| b <= max_backlog);
-        let pending_ok = self.pending.map_or(true, |p| p <= max_pending);
+        let backlog_ok = self.backlog.is_none_or(|b| b <= max_backlog);
+        let pending_ok = self.pending.is_none_or(|p| p <= max_pending);
         backlog_ok && pending_ok
     }
 }
@@ -142,7 +142,7 @@ impl WriteMetrics {
     ///
     /// Returns false if there's a long pending time (backpressure).
     pub fn is_healthy(&self, max_pending: Microseconds) -> bool {
-        self.pending.map_or(true, |p| p <= max_pending)
+        self.pending.is_none_or(|p| p <= max_pending)
     }
 }
 
