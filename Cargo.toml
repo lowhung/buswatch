@@ -2,7 +2,7 @@
 name = "buswatch"
 version = "0.2.2"
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.85"
 authors = ["Matthew Hounslow"]
 description = "Diagnostic TUI for monitoring Caryatid message bus activity"
 license = "Apache-2.0"
