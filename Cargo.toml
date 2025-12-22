@@ -1,6 +1,6 @@
 [package]
 name = "buswatch"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 rust-version = "1.70"
 authors = ["Matthew Hounslow"]
@@ -38,7 +38,7 @@ futures-util = { version = "0.3", optional = true }
 minicbor-serde = { version = "0.6", features = ["alloc"], optional = true }
 
 [features]
-default = []
+default = ["subscribe"]
 subscribe = ["lapin", "futures-util", "minicbor-serde"]
 
 [dev-dependencies]
