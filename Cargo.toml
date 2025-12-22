@@ -1,6 +1,7 @@
 [workspace]
 members = ["buswatch-tui", "buswatch-types", "buswatch-sdk", "buswatch-adapters"]
 resolver = "2"
+default-members = ["buswatch-tui"]
 
 [package]
 name = "buswatch"
