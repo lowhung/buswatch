@@ -113,6 +113,14 @@ pattern = "caryatid.monitor.*"
 bus = "external"
 ```
 
+### Message Format
+
+Messages are serialized using [CBOR](https://cbor.io) (Concise Binary Object Representation) via `minicbor-serde`, matching Caryatid's native message bus format. CBOR provides:
+
+- Compact binary encoding (smaller than JSON)
+- Fast serialization/deserialization
+- Schema compatibility with serde
+
 ## Health Thresholds
 
 Modules are marked unhealthy based on:

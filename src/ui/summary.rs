@@ -136,6 +136,8 @@ pub fn render(frame: &mut Frame, app: &mut App, area: Rect) {
                 Cell::from(sparkline),
                 Cell::from(m.health.symbol()).style(status_style),
             ])
+            .height(2) // Add vertical spacing so sparkline bars don't touch row above
+            .bottom_margin(0)
         })
         .collect();
 

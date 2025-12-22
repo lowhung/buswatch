@@ -211,26 +211,31 @@ pub fn render(frame: &mut Frame, app: &mut App, area: Rect) {
     // Selected module connections
     if let Some(selected) = data.modules.get(app.selected_module_index) {
         // Module header with stats
-        let total_out: usize = selected
-            .writes
-            .iter()
-            .filter_map(|w| {
-                graph
-                    .consumers
-                    .get(&w.topic)
-                    .map(|c| c.len().saturating_sub(1))
-            })
-            .sum();
-        let total_in: usize = selected
-            .reads
-            .iter()
-            .filter_map(|r| {
-                graph
-                    .producers
-                    .get(&r.topic)
-                    .map(|p| p.len().saturating_sub(1))
-            })
-            .sum();
+        // Count unique modules this module sends to (via topics it writes that others read)
+        let mut out_modules: HashSet<&str> = HashSet::new();
+        for w in &selected.writes {
+            if let Some(consumers) = graph.consumers.get(&w.topic) {
+                for consumer in consumers {
+                    if consumer != &selected.name {
+                        out_modules.insert(consumer.as_str());
+                    }
+                }
+            }
+        }
+        let total_out = out_modules.len();
+
+        // Count unique modules this module receives from (via topics it reads that others write)
+        let mut in_modules: HashSet<&str> = HashSet::new();
+        for r in &selected.reads {
+            if let Some(producers) = graph.producers.get(&r.topic) {
+                for producer in producers {
+                    if producer != &selected.name {
+                        in_modules.insert(producer.as_str());
+                    }
+                }
+            }
+        }
+        let total_in = in_modules.len();
 
         detail_lines.push(Line::from(vec![
             Span::styled(

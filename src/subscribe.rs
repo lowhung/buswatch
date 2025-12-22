@@ -57,34 +57,54 @@ pub async fn create_subscriber(
 
     let channel = conn.create_channel().await?;
 
-    // Declare a temporary exclusive queue
-    let queue = channel
+    // Try to consume from an existing named queue first (caryatid creates these),
+    // otherwise create a temporary exclusive queue bound to the exchange
+    let queue_name = if channel
         .queue_declare(
-            "",
+            topic,
             QueueDeclareOptions {
-                exclusive: true,
-                auto_delete: true,
+                passive: true, // Check if queue exists without creating
                 ..Default::default()
             },
             FieldTable::default(),
         )
-        .await?;
+        .await
+        .is_ok()
+    {
+        // Queue exists, use it directly
+        topic.to_string()
+    } else {
+        // Queue doesn't exist, create a temporary one and bind to exchange
+        let queue = channel
+            .queue_declare(
+                "",
+                QueueDeclareOptions {
+                    exclusive: true,
+                    auto_delete: true,
+                    ..Default::default()
+                },
+                FieldTable::default(),
+            )
+            .await?;
 
-    // Bind queue to the exchange with the topic pattern
-    channel
-        .queue_bind(
-            queue.name().as_str(),
-            &exchange,
-            topic,
-            QueueBindOptions::default(),
-            FieldTable::default(),
-        )
-        .await?;
+        // Bind queue to the exchange with the topic pattern
+        channel
+            .queue_bind(
+                queue.name().as_str(),
+                &exchange,
+                topic,
+                QueueBindOptions::default(),
+                FieldTable::default(),
+            )
+            .await?;
+
+        queue.name().to_string()
+    };
 
     // Start consuming
     let mut consumer = channel
         .basic_consume(
-            queue.name().as_str(),
+            &queue_name,
             "buswatch",
             BasicConsumeOptions {
                 no_ack: true,
@@ -102,16 +122,24 @@ pub async fn create_subscriber(
         while let Some(delivery) = consumer.next().await {
             match delivery {
                 Ok(delivery) => {
-                    // Try to deserialize as MonitorSnapshot
-                    if let Ok(snapshot) = serde_json::from_slice::<MonitorSnapshot>(&delivery.data)
-                    {
-                        if tx.send(snapshot).is_err() {
-                            // Receiver dropped
-                            break;
+                    // Try to deserialize as MonitorSnapshot (CBOR format, matching caryatid)
+                    match minicbor_serde::from_slice::<MonitorSnapshot>(&delivery.data) {
+                        Ok(snapshot) => {
+                            if tx.send(snapshot).is_err() {
+                                // Receiver dropped
+                                break;
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!(
+                                "Failed to deserialize CBOR snapshot: {:?}",
+                                e
+                            );
                         }
                     }
                 }
-                Err(_) => {
+                Err(e) => {
+                    eprintln!("Consumer error: {}", e);
                     // Connection error, exit
                     break;
                 }

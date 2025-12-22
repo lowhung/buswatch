@@ -93,7 +93,14 @@ struct Args {
     unread_crit: u64,
 
     /// Export current state to JSON file and exit
-    #[arg(short, long, conflicts_with_all = ["connect", "subscribe"])]
+    #[cfg_attr(
+        feature = "subscribe",
+        arg(short, long, conflicts_with_all = ["connect", "subscribe"])
+    )]
+    #[cfg_attr(
+        not(feature = "subscribe"),
+        arg(short, long, conflicts_with_all = ["connect"])
+    )]
     export: Option<PathBuf>,
 }
 
