@@ -70,8 +70,6 @@ buswatch --subscribe rabbitmq.toml --topic caryatid.monitor.snapshot
 
 ## Architecture
 
-## Architecture
-
 ```mermaid
 flowchart LR
     subgraph Your Application
