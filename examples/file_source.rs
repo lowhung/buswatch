@@ -23,7 +23,9 @@ fn main() {
         eprintln!("Usage: cargo run --example file_source -- <path-to-monitor.json>");
         eprintln!();
         eprintln!("The file should contain a JSON snapshot in the format:");
-        eprintln!(r#"  {{"version": {{"major": 1, "minor": 0}}, "timestamp_ms": 0, "modules": {{}}}}"#);
+        eprintln!(
+            r#"  {{"version": {{"major": 1, "minor": 0}}, "timestamp_ms": 0, "modules": {{}}}}"#
+        );
         std::process::exit(1);
     });
 
