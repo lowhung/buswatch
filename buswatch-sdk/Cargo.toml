@@ -1,0 +1,28 @@
+[package]
+name = "buswatch-sdk"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["Matthew Hounslow"]
+description = "Instrumentation SDK for emitting message bus metrics to buswatch"
+license = "Apache-2.0"
+repository = "https://github.com/lowhung/buswatch"
+documentation = "https://docs.rs/buswatch-sdk"
+readme = "README.md"
+keywords = ["message-bus", "observability", "monitoring", "instrumentation", "metrics"]
+categories = ["development-tools::debugging", "development-tools::profiling"]
+
+[features]
+default = ["tokio"]
+tokio = ["dep:tokio"]
+
+[dependencies]
+buswatch-types = { path = "../buswatch-types", features = ["serde"] }
+serde_json = "1"
+parking_lot = "0.12"
+
+# Async runtime (optional, for background emission)
+tokio = { version = "1", features = ["time", "sync", "rt", "io-util", "net", "fs", "macros"], optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full", "test-util"] }
