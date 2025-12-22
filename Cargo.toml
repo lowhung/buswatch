@@ -5,7 +5,7 @@ default-members = ["buswatch-tui"]
 
 [package]
 name = "buswatch"
-version = "0.2.5"
+version = "0.2.6"
 edition = "2021"
 rust-version = "1.85"
 authors = ["Matthew Hounslow"]
