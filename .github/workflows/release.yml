@@ -15,63 +15,50 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
       - name: Generate Cargo.lock
         run: cargo generate-lockfile
 
-      - name: cargo-audit cache restore
-        id: cargo-audit_cache_restore
-        uses: actions/cache/restore@v4
+      - name: cargo-audit cache
+        id: cargo-audit-cache
+        uses: actions/cache@v4
         with:
           path: ~/.cargo/bin/cargo-audit
           key: ${{ runner.os }}-cargo-audit
 
       - run: cargo install cargo-audit
-        if: steps.cargo-audit_cache_restore.outputs.cache-hit != 'true'
-
-      - name: cargo-audit cache save
-        uses: actions/cache/save@v4
-        if: always() && steps.cargo-audit_cache_restore.outputs.cache-hit != 'true'
-        with:
-          path: ~/.cargo/bin/cargo-audit
-          key: ${{ runner.os }}-cargo-audit
+        if: steps.cargo-audit-cache.outputs.cache-hit != 'true'
 
       - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  build_and_test_linux:
-    name: Build and Test (Linux)
-    runs-on: ubuntu-latest
+  test:
+    name: Test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fetch
       - name: Build and test
-        run: cargo test --workspace --all-features
-
-  build_and_test_macos:
-    name: Build and Test (macOS)
-    runs-on: macos-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-
-      - name: Build and test
-        run: cargo test --workspace --all-features
+        run: cargo test --all-features
 
   publish:
     name: Publish (crates.io)
-    needs:
-      - audit
-      - build_and_test_linux
-      - build_and_test_macos
+    needs: [audit, test]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
 
       - name: Verify version matches tag
         run: |
