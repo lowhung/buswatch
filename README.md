@@ -1,6 +1,5 @@
 <div align="center">
-
-```                                                                                                                                                                                            
+<pre>
     ,---,.                                                        ___                ,---,     
   ,'  .'  \                                                     ,--.'|_            ,--.' |     
 ,---.' .' |         ,--,                      .---.             |  | :,'           |  |  :     
@@ -14,9 +13,10 @@
 |   :   /  :  ,      .-./'--'.     /   \   \  |--";  :   .'   \ |  ,   / |   :    :|  | ,'     
 |   | ,'    `--`----'      `--'---'     \   \ |   |  ,     .-./  ---`-'   \   \  / `--''       
 `----'                                   '---"     `--`---'                `----'
-```
+</pre>
 
 <h3>Diagnostic toolkit for message bus observability</h3>
+
 
 [![Crates.io](https://img.shields.io/crates/v/buswatch.svg)](https://crates.io/crates/buswatch)
 [![Documentation](https://docs.rs/buswatch/badge.svg)](https://docs.rs/buswatch)
