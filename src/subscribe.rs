@@ -122,8 +122,11 @@ pub async fn create_subscriber(
         while let Some(delivery) = consumer.next().await {
             match delivery {
                 Ok(delivery) => {
-                    // Try to deserialize as MonitorSnapshot (CBOR format, matching caryatid)
-                    match minicbor_serde::from_slice::<MonitorSnapshot>(&delivery.data) {
+                    // Auto-detect format: try CBOR first (Caryatid's native format), fall back to JSON
+                    let snapshot = minicbor_serde::from_slice::<MonitorSnapshot>(&delivery.data)
+                        .or_else(|_| serde_json::from_slice::<MonitorSnapshot>(&delivery.data));
+
+                    match snapshot {
                         Ok(snapshot) => {
                             if tx.send(snapshot).is_err() {
                                 // Receiver dropped
@@ -131,10 +134,7 @@ pub async fn create_subscriber(
                             }
                         }
                         Err(e) => {
-                            eprintln!(
-                                "Failed to deserialize CBOR snapshot: {:?}",
-                                e
-                            );
+                            eprintln!("Failed to deserialize snapshot: {}", e);
                         }
                     }
                 }

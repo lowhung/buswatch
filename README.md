@@ -115,11 +115,12 @@ bus = "external"
 
 ### Message Format
 
-Messages are serialized using [CBOR](https://cbor.io) (Concise Binary Object Representation) via `minicbor-serde`, matching Caryatid's native message bus format. CBOR provides:
+buswatch auto-detects the message format, supporting both:
 
-- Compact binary encoding (smaller than JSON)
-- Fast serialization/deserialization
-- Schema compatibility with serde
+- **CBOR** - Caryatid's native format (compact binary, used by default)
+- **JSON** - Fallback for compatibility
+
+No configuration needed - it just works.
 
 ## Health Thresholds
 
