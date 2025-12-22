@@ -70,18 +70,27 @@ buswatch --subscribe rabbitmq.toml --topic caryatid.monitor.snapshot
 
 ## Architecture
 
-```
-┌─────────────────┐     ┌─────────────────┐     ┌──────────────┐
-│  Your App       │     │  Message Bus    │     │              │
-│  + buswatch-sdk │────▶│  (RabbitMQ,     │◀────│  buswatch    │
-│                 │     │   Kafka, NATS)  │     │  TUI         │
-└─────────────────┘     └─────────────────┘     └──────────────┘
-                                │
-                                ▼
-                        ┌─────────────────┐
-                        │ buswatch-adapters│
-                        │ (collectors)     │
-                        └─────────────────┘
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Your Application
+        SDK[buswatch-sdk]
+    end
+
+    subgraph Message Bus
+        MQ[RabbitMQ / Kafka / NATS]
+    end
+
+    subgraph Buswatch
+        TUI[buswatch TUI]
+        Adapters[buswatch-adapters]
+    end
+
+    SDK -->|emit metrics| MQ
+    MQ -->|subscribe| TUI
+    MQ -->|collect| Adapters
+    Adapters -->|feed| TUI
 ```
 
 **Two ways to get data into buswatch:**
