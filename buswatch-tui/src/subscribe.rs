@@ -121,23 +121,16 @@ pub async fn create_subscriber(
     let handle = tokio::spawn(async move {
         while let Some(delivery) = consumer.next().await {
             match delivery {
-                Ok(delivery) => {
-                    // Auto-detect format: try CBOR first (Caryatid's native format), fall back to JSON
-                    let snapshot = minicbor_serde::from_slice::<Snapshot>(&delivery.data)
-                        .or_else(|_| serde_json::from_slice::<Snapshot>(&delivery.data));
-
-                    match snapshot {
-                        Ok(snapshot) => {
-                            if tx.send(snapshot).is_err() {
-                                // Receiver dropped
-                                break;
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to deserialize snapshot: {}", e);
+                Ok(delivery) => match minicbor_serde::from_slice::<Snapshot>(&delivery.data) {
+                    Ok(snapshot) => {
+                        if tx.send(snapshot).is_err() {
+                            break;
                         }
                     }
-                }
+                    Err(e) => {
+                        eprintln!("Failed to deserialize snapshot: {}", e);
+                    }
+                },
                 Err(e) => {
                     eprintln!("Consumer error: {}", e);
                     // Connection error, exit
