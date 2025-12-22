@@ -1,6 +1,11 @@
 [advisories]
 version = 2
-ignore = []
+ignore = [
+    # Unmaintained but no security issues, used transitively by dependencies
+    "RUSTSEC-2024-0384", # instant - used by lapin's async-io
+    "RUSTSEC-2024-0436", # paste - used by ratatui
+    "RUSTSEC-2025-0134", # rustls-pemfile - used by tcp-stream
+]
 
 [licenses]
 version = 2
@@ -11,8 +16,8 @@ allow = [
     "BSD-3-Clause",
     "ISC",
     "Zlib",
+    "BlueOak-1.0.0",
     "Unicode-3.0",
-    "Unicode-DFS-2016",
 ]
 confidence-threshold = 0.8
 
