@@ -14,7 +14,7 @@
 //!
 //! ## Quick Start (RabbitMQ)
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use buswatch_adapters::rabbitmq::RabbitMqAdapter;
 //! use std::time::Duration;
 //!

@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lowhung/buswatch/blob/main/buswatch-types/schema/snapshot.schema.json",
+  "title": "Buswatch Snapshot",
+  "description": "Point-in-time snapshot of message bus metrics across all modules",
+  "type": "object",
+  "required": ["version", "timestamp_ms", "modules"],
+  "properties": {
+    "version": {
+      "$ref": "#/definitions/SchemaVersion"
+    },
+    "timestamp_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix timestamp in milliseconds when the snapshot was taken"
+    },
+    "modules": {
+      "type": "object",
+      "description": "Metrics keyed by module name",
+      "additionalProperties": {
+        "$ref": "#/definitions/ModuleMetrics"
+      }
+    }
+  },
+  "definitions": {
+    "SchemaVersion": {
+      "type": "object",
+      "description": "Schema version for forward compatibility checking",
+      "required": ["major", "minor"],
+      "properties": {
+        "major": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Major version - breaking changes increment this"
+        },
+        "minor": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minor version - backwards-compatible additions increment this"
+        }
+      }
+    },
+    "ModuleMetrics": {
+      "type": "object",
+      "description": "Metrics for a single module/component",
+      "required": ["reads", "writes"],
+      "properties": {
+        "reads": {
+          "type": "object",
+          "description": "Subscription/consumption metrics keyed by topic name",
+          "additionalProperties": {
+            "$ref": "#/definitions/ReadMetrics"
+          }
+        },
+        "writes": {
+          "type": "object",
+          "description": "Publication/production metrics keyed by topic name",
+          "additionalProperties": {
+            "$ref": "#/definitions/WriteMetrics"
+          }
+        }
+      }
+    },
+    "ReadMetrics": {
+      "type": "object",
+      "description": "Metrics for reading/consuming from a topic",
+      "required": ["count"],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total messages successfully read"
+        },
+        "backlog": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of messages waiting to be read"
+        },
+        "pending": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How long consumer has been waiting for messages (microseconds)"
+        },
+        "rate": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Messages read per second"
+        }
+      }
+    },
+    "WriteMetrics": {
+      "type": "object",
+      "description": "Metrics for writing/producing to a topic",
+      "required": ["count"],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total messages successfully written"
+        },
+        "pending": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How long producer has been waiting due to backpressure (microseconds)"
+        },
+        "rate": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Messages written per second"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "version": { "major": 1, "minor": 0 },
+      "timestamp_ms": 1703160000000,
+      "modules": {
+        "order-processor": {
+          "reads": {
+            "orders.new": {
+              "count": 1500,
+              "backlog": 23,
+              "pending": 150000,
+              "rate": 42.5
+            }
+          },
+          "writes": {
+            "orders.processed": {
+              "count": 1497,
+              "rate": 42.3
+            }
+          }
+        },
+        "notification-sender": {
+          "reads": {
+            "orders.processed": {
+              "count": 1450,
+              "backlog": 47
+            }
+          },
+          "writes": {}
+        }
+      }
+    }
+  ]
+}

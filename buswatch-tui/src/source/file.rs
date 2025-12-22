@@ -6,7 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-use super::{DataSource, MonitorSnapshot};
+use super::{DataSource, Snapshot};
 
 /// A data source that reads monitor snapshots from a JSON file.
 ///
@@ -22,7 +22,7 @@ pub struct FileSource {
     last_error: Option<String>,
     last_modified: Option<SystemTime>,
     /// Cached snapshot to return on first poll
-    cached_snapshot: Option<MonitorSnapshot>,
+    cached_snapshot: Option<Snapshot>,
 }
 
 impl FileSource {
@@ -50,7 +50,7 @@ impl FileSource {
     }
 
     /// Read and parse the file.
-    fn read_file(&mut self) -> Option<MonitorSnapshot> {
+    fn read_file(&mut self) -> Option<Snapshot> {
         match fs::read_to_string(&self.path) {
             Ok(content) => match serde_json::from_str(&content) {
                 Ok(snapshot) => {
@@ -71,7 +71,7 @@ impl FileSource {
 }
 
 impl DataSource for FileSource {
-    fn poll(&mut self) -> Option<MonitorSnapshot> {
+    fn poll(&mut self) -> Option<Snapshot> {
         let current_modified = self.get_modified_time();
 
         // Check if file has been modified since last read

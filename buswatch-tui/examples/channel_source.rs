@@ -17,7 +17,7 @@
 use std::thread;
 use std::time::Duration;
 
-use buswatch::{ChannelSource, DataSource, Snapshot};
+use buswatch_tui::{ChannelSource, DataSource, Snapshot};
 
 fn main() {
     println!("Channel source example");

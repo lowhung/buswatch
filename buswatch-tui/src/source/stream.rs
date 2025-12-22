@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncBufReadExt, AsyncRead, BufReader};
 use tokio::sync::mpsc;
 
-use super::{DataSource, MonitorSnapshot};
+use super::{DataSource, Snapshot};
 
 /// A data source that receives monitor snapshots from an async stream.
 ///
@@ -20,7 +20,7 @@ use super::{DataSource, MonitorSnapshot};
 ///
 /// ```
 /// use std::io::Cursor;
-/// use buswatch::StreamSource;
+/// use buswatch_tui::StreamSource;
 ///
 /// # tokio_test::block_on(async {
 /// let data = b"{}\n";
@@ -30,9 +30,9 @@ use super::{DataSource, MonitorSnapshot};
 /// ```
 #[derive(Debug)]
 pub struct StreamSource {
-    receiver: mpsc::Receiver<MonitorSnapshot>,
+    receiver: mpsc::Receiver<Snapshot>,
     description: String,
-    last_snapshot: Option<MonitorSnapshot>,
+    last_snapshot: Option<Snapshot>,
     last_error: Arc<Mutex<Option<String>>>,
 }
 
@@ -64,7 +64,7 @@ impl StreamSource {
                     }
                     Ok(_) => {
                         // Try to parse the line as JSON
-                        match serde_json::from_str::<MonitorSnapshot>(line.trim()) {
+                        match serde_json::from_str::<Snapshot>(line.trim()) {
                             Ok(snapshot) => {
                                 *error_handle.lock().unwrap() = None;
                                 if tx.send(snapshot).await.is_err() {
@@ -106,7 +106,7 @@ impl StreamSource {
 
         tokio::spawn(async move {
             while let Some(bytes) = rx.recv().await {
-                match serde_json::from_slice::<MonitorSnapshot>(&bytes) {
+                match serde_json::from_slice::<Snapshot>(&bytes) {
                     Ok(snapshot) => {
                         *error_handle.lock().unwrap() = None;
                         if tx.send(snapshot).await.is_err() {
@@ -130,7 +130,7 @@ impl StreamSource {
 }
 
 impl DataSource for StreamSource {
-    fn poll(&mut self) -> Option<MonitorSnapshot> {
+    fn poll(&mut self) -> Option<Snapshot> {
         // Try to receive without blocking
         match self.receiver.try_recv() {
             Ok(snapshot) => {

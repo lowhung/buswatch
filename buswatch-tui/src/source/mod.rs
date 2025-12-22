@@ -5,16 +5,16 @@
 
 mod channel;
 mod file;
-mod snapshot;
 mod stream;
 
 pub use channel::ChannelSource;
 pub use file::FileSource;
-pub use snapshot::{
-    Microseconds, ModuleMetrics, MonitorSnapshot, ReadMetrics, SchemaVersion, Snapshot,
-    WriteMetrics,
-};
 pub use stream::StreamSource;
+
+// Re-export types from buswatch-types
+pub use buswatch_types::{
+    Microseconds, ModuleMetrics, ReadMetrics, SchemaVersion, Snapshot, WriteMetrics,
+};
 
 use std::fmt::Debug;
 
@@ -26,7 +26,7 @@ use std::fmt::Debug;
 /// # Example
 ///
 /// ```
-/// use buswatch::{FileSource, DataSource};
+/// use buswatch_tui::{FileSource, DataSource};
 ///
 /// let mut source = FileSource::new("monitor.json");
 /// if let Some(snapshot) = source.poll() {
@@ -38,7 +38,7 @@ pub trait DataSource: Send + Debug {
     ///
     /// Returns `Some(snapshot)` if new data is available, `None` otherwise.
     /// This method should be non-blocking.
-    fn poll(&mut self) -> Option<MonitorSnapshot>;
+    fn poll(&mut self) -> Option<Snapshot>;
 
     /// Returns a human-readable description of the source.
     ///

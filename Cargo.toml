@@ -1,3 +1,7 @@
+[workspace]
+members = ["buswatch-tui", "buswatch-types", "buswatch-sdk", "buswatch-adapters"]
+resolver = "2"
+
 [package]
 name = "buswatch"
 version = "0.2.5"
@@ -17,31 +21,10 @@ exclude = [".github/", ".gitignore"]
 name = "buswatch"
 path = "src/lib.rs"
 
-[[bin]]
-name = "buswatch"
-path = "src/main.rs"
-
 [dependencies]
+buswatch-tui = { path = "buswatch-tui" }
 buswatch-types = { path = "buswatch-types", features = ["serde"] }
-clap = { version = "4", features = ["derive"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-tokio = { version = "1", features = ["full"] }
-anyhow = "1"
-ratatui = "0.29"
-crossterm = "0.28"
-terminal-light = "1.4"
-config = "0.15"
-
-# RabbitMQ subscription (optional feature)
-lapin = { version = "2", optional = true }
-futures-util = { version = "0.3", optional = true }
-minicbor-serde = { version = "0.6", features = ["alloc"], optional = true }
 
 [features]
 default = ["subscribe"]
-subscribe = ["lapin", "futures-util", "minicbor-serde"]
-
-[dev-dependencies]
-tempfile = "3"
-tokio-test = "0.4"
+subscribe = ["buswatch-tui/subscribe"]

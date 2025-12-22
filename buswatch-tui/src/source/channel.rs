@@ -6,7 +6,7 @@
 
 use tokio::sync::watch;
 
-use super::{DataSource, MonitorSnapshot};
+use super::{DataSource, Snapshot};
 
 /// A data source that receives monitor snapshots via a channel.
 ///
@@ -17,14 +17,14 @@ use super::{DataSource, MonitorSnapshot};
 /// # Example
 ///
 /// ```
-/// use buswatch::ChannelSource;
+/// use buswatch_tui::ChannelSource;
 ///
 /// // Create a channel pair
 /// let (tx, source) = ChannelSource::create("rabbitmq://localhost");
 /// ```
 #[derive(Debug)]
 pub struct ChannelSource {
-    receiver: watch::Receiver<MonitorSnapshot>,
+    receiver: watch::Receiver<Snapshot>,
     description: String,
     /// Track if we've returned the initial value yet
     initial_returned: bool,
@@ -38,7 +38,7 @@ impl ChannelSource {
     /// * `receiver` - The receiving end of a watch channel
     /// * `source_description` - A description of where snapshots come from
     ///   (e.g., "rabbitmq://localhost", "nats://broker:4222")
-    pub fn new(receiver: watch::Receiver<MonitorSnapshot>, source_description: &str) -> Self {
+    pub fn new(receiver: watch::Receiver<Snapshot>, source_description: &str) -> Self {
         let description = format!("channel: {}", source_description);
         Self {
             receiver,
@@ -51,15 +51,15 @@ impl ChannelSource {
     ///
     /// Returns (sender, source) where the sender can be used to push
     /// snapshots and the source can be used with the Doctor TUI.
-    pub fn create(source_description: &str) -> (watch::Sender<MonitorSnapshot>, Self) {
-        let (tx, rx) = watch::channel(MonitorSnapshot::default());
+    pub fn create(source_description: &str) -> (watch::Sender<Snapshot>, Self) {
+        let (tx, rx) = watch::channel(Snapshot::default());
         let source = Self::new(rx, source_description);
         (tx, source)
     }
 }
 
 impl DataSource for ChannelSource {
-    fn poll(&mut self) -> Option<MonitorSnapshot> {
+    fn poll(&mut self) -> Option<Snapshot> {
         // Return the initial value on first poll
         if !self.initial_returned {
             self.initial_returned = true;
@@ -103,9 +103,7 @@ mod tests {
         assert!(source.poll().is_none());
 
         // Send a new snapshot
-        let new_snapshot = MonitorSnapshot::builder()
-            .module("TestModule", |m| m)
-            .build();
+        let new_snapshot = Snapshot::builder().module("TestModule", |m| m).build();
         tx.send(new_snapshot).unwrap();
 
         // Now poll returns the new snapshot

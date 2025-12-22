@@ -14,7 +14,7 @@
 //! buswatch --subscribe config.toml --topic caryatid.monitor.snapshot
 //! ```
 
-use crate::source::{ChannelSource, MonitorSnapshot};
+use crate::source::{ChannelSource, Snapshot};
 use anyhow::{Context, Result};
 use config::{Config, Environment, File};
 use futures_util::StreamExt;
@@ -123,8 +123,8 @@ pub async fn create_subscriber(
             match delivery {
                 Ok(delivery) => {
                     // Auto-detect format: try CBOR first (Caryatid's native format), fall back to JSON
-                    let snapshot = minicbor_serde::from_slice::<MonitorSnapshot>(&delivery.data)
-                        .or_else(|_| serde_json::from_slice::<MonitorSnapshot>(&delivery.data));
+                    let snapshot = minicbor_serde::from_slice::<Snapshot>(&delivery.data)
+                        .or_else(|_| serde_json::from_slice::<Snapshot>(&delivery.data));
 
                     match snapshot {
                         Ok(snapshot) => {

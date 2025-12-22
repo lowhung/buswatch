@@ -1,29 +1,29 @@
 # buswatch-types
 
-Core types for message bus observability. This crate defines the universal schema that any message bus system can use to emit metrics consumable by [buswatch](https://crates.io/crates/buswatch) and other monitoring tools.
+[![Crates.io](https://img.shields.io/crates/v/buswatch-types.svg)](https://crates.io/crates/buswatch-types)
+[![Documentation](https://docs.rs/buswatch-types/badge.svg)](https://docs.rs/buswatch-types)
 
-## Features
+Core type definitions for the buswatch ecosystem.
 
-- **Zero required dependencies**: Core types work without any serialization framework
-- **Optional serialization**: Enable `serde` and/or `minicbor` features as needed
-- **Protocol agnostic**: Works with RabbitMQ, Kafka, NATS, Redis Streams, or custom buses
-- **Versioned schema**: Snapshots include version info for forward compatibility
-- **Ergonomic builders**: Fluent API for constructing snapshots
-- **`no_std` compatible**: Use in embedded or constrained environments
+This crate defines the canonical wire format for message bus metrics. All buswatch components use these types for serialization and deserialization.
 
-## Installation
+## Types
+
+| Type | Description |
+|------|-------------|
+| `Snapshot` | Point-in-time view of all modules and their metrics |
+| `ModuleMetrics` | Read and write metrics for a single module |
+| `ReadMetrics` | Consumption metrics: count, backlog, pending duration, rate |
+| `WriteMetrics` | Production metrics: count, pending duration, rate |
+| `Microseconds` | Duration wrapper for consistent serialization |
+| `SchemaVersion` | Version info for forward compatibility |
+
+## Usage
 
 ```toml
 [dependencies]
-buswatch-types = "0.1"
-
-# With serialization support
 buswatch-types = { version = "0.1", features = ["serde"] }
-buswatch-types = { version = "0.1", features = ["minicbor"] }
-buswatch-types = { version = "0.1", features = ["all"] }
 ```
-
-## Usage
 
 ### Building Snapshots
 
@@ -33,54 +33,58 @@ use std::time::Duration;
 
 let snapshot = Snapshot::builder()
     .module("order-processor", |m| {
-        m.read("orders.new", |r| {
-            r.count(1500)
-             .backlog(23)
-             .pending(Duration::from_millis(150))
-        })
-        .write("orders.processed", |w| {
-            w.count(1497)
-        })
+        m.read("orders.new", |r| r.count(1500).backlog(23))
+         .write("orders.processed", |w| w.count(1497))
     })
     .module("notification-sender", |m| {
         m.read("orders.processed", |r| r.count(1450).backlog(47))
     })
     .build();
+
+println!("Modules: {}", snapshot.len());
 ```
 
 ### Serialization
 
-With the `serde` feature:
-
 ```rust
 use buswatch_types::Snapshot;
 
-let snapshot = Snapshot::builder()
-    .module("my-service", |m| m.read("events", |r| r.count(100)))
-    .build();
+let snapshot = Snapshot::default();
 
-// JSON
-let json = serde_json::to_string_pretty(&snapshot)?;
+// To JSON
+let json = serde_json::to_string(&snapshot)?;
 
-// Or any other serde-compatible format
+// From JSON
+let parsed: Snapshot = serde_json::from_str(&json)?;
 ```
 
-With the `minicbor` feature for compact binary encoding:
+## Features
 
-```rust
-use buswatch_types::Snapshot;
+| Feature | Description |
+|---------|-------------|
+| `serde` | JSON/MessagePack serialization via serde |
+| `minicbor` | Compact CBOR binary format |
+| `std` | Standard library support (enabled by default) |
 
-let snapshot = Snapshot::builder()
-    .module("my-service", |m| m.read("events", |r| r.count(100)))
-    .build();
+### no_std Support
 
-let bytes = minicbor::to_vec(&snapshot)?;
-let decoded: Snapshot = minicbor::decode(&bytes)?;
+This crate supports `no_std` environments with `alloc`:
+
+```toml
+[dependencies]
+buswatch-types = { version = "0.1", default-features = false, features = ["serde"] }
 ```
 
-## Schema
+## JSON Schema
 
-The snapshot schema is versioned for forward compatibility:
+A formal JSON Schema is available at [`schema/snapshot.schema.json`](schema/snapshot.schema.json).
+
+This enables:
+- Validation of snapshots from any language
+- Auto-generation of types for non-Rust systems
+- Documentation of the wire format
+
+### Example Snapshot
 
 ```json
 {
@@ -92,12 +96,14 @@ The snapshot schema is versioned for forward compatibility:
         "orders.new": {
           "count": 1500,
           "backlog": 23,
-          "pending": 150000
+          "pending": 150000,
+          "rate": 42.5
         }
       },
       "writes": {
         "orders.processed": {
-          "count": 1497
+          "count": 1497,
+          "rate": 42.3
         }
       }
     }
@@ -105,15 +111,32 @@ The snapshot schema is versioned for forward compatibility:
 }
 ```
 
-### Types
+### Field Reference
 
-- **`Snapshot`**: Top-level container with timestamp and all module metrics
-- **`ModuleMetrics`**: Reads and writes for a single module
-- **`ReadMetrics`**: Count, backlog, pending time, and rate for a subscription
-- **`WriteMetrics`**: Count, pending time, and rate for a publication
-- **`Microseconds`**: Duration wrapper for consistent serialization
-- **`SchemaVersion`**: Version info for compatibility checking
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `version.major` | u32 | Yes | Breaking changes increment this |
+| `version.minor` | u32 | Yes | Backwards-compatible additions |
+| `timestamp_ms` | u64 | Yes | Unix timestamp in milliseconds |
+| `modules` | object | Yes | Map of module name to metrics |
+| `reads.*.count` | u64 | Yes | Total messages read |
+| `reads.*.backlog` | u64 | No | Unread messages waiting |
+| `reads.*.pending` | u64 | No | Wait time in microseconds |
+| `reads.*.rate` | f64 | No | Messages per second |
+| `writes.*.count` | u64 | Yes | Total messages written |
+| `writes.*.pending` | u64 | No | Backpressure time in microseconds |
+| `writes.*.rate` | f64 | No | Messages per second |
 
-## License
+## Version Compatibility
 
-Apache-2.0
+The `SchemaVersion` type enables forward compatibility:
+
+```rust
+use buswatch_types::SchemaVersion;
+
+let version = SchemaVersion::current();
+assert!(version.is_compatible()); // true for current major version
+```
+
+- **Major version change**: Breaking format change, old parsers may fail
+- **Minor version change**: New optional fields added, old parsers still work
