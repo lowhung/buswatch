@@ -1,11 +1,22 @@
 <div align="center">
 
-```
- ____  ____  ____  _      ____  _____  ____  _     
-/  _ \/  __\/  _ \/ \  /|/  _ \/__ __\/   _\/ \  /|
-| | //|  \/|| / \|| |  ||| / \|  / \  |  /  | |__||
-| |_\\|  __/| |-||| |/\||| |-||  | |  |  \_ | |  ||
-\____/\_/   \_/ \|\_/  \|\_/ \|  \_/  \____/\_/  \|
+```                                                                                                       
+BBBBBBBBBBBBBBBBB                                                                                                    tttt                             hhhhhhh             
+B::::::::::::::::B                                                                                                ttt:::t                             h:::::h             
+B::::::BBBBBB:::::B                                                                                               t:::::t                             h:::::h             
+BB:::::B     B:::::B                                                                                              t:::::t                             h:::::h             
+  B::::B     B:::::Buuuuuu    uuuuuu      sssssssssswwwwwww           wwwww           wwwwwwwaaaaaaaaaaaaa  ttttttt:::::ttttttt        cccccccccccccccch::::h hhhhh       
+  B::::B     B:::::Bu::::u    u::::u    ss::::::::::sw:::::w         w:::::w         w:::::w a::::::::::::a t:::::::::::::::::t      cc:::::::::::::::ch::::hh:::::hhh    
+  B::::BBBBBB:::::B u::::u    u::::u  ss:::::::::::::sw:::::w       w:::::::w       w:::::w  aaaaaaaaa:::::at:::::::::::::::::t     c:::::::::::::::::ch::::::::::::::hh  
+  B:::::::::::::BB  u::::u    u::::u  s::::::ssss:::::sw:::::w     w:::::::::w     w:::::w            a::::atttttt:::::::tttttt    c:::::::cccccc:::::ch:::::::hhh::::::h 
+  B::::BBBBBB:::::B u::::u    u::::u   s:::::s  ssssss  w:::::w   w:::::w:::::w   w:::::w      aaaaaaa:::::a      t:::::t          c::::::c     ccccccch::::::h   h::::::h
+  B::::B     B:::::Bu::::u    u::::u     s::::::s        w:::::w w:::::w w:::::w w:::::w     aa::::::::::::a      t:::::t          c:::::c             h:::::h     h:::::h
+  B::::B     B:::::Bu::::u    u::::u        s::::::s      w:::::w:::::w   w:::::w:::::w     a::::aaaa::::::a      t:::::t          c:::::c             h:::::h     h:::::h
+  B::::B     B:::::Bu:::::uuuu:::::u  ssssss   s:::::s     w:::::::::w     w:::::::::w     a::::a    a:::::a      t:::::t    ttttttc::::::c     ccccccch:::::h     h:::::h
+BB:::::BBBBBB::::::Bu:::::::::::::::uus:::::ssss::::::s     w:::::::w       w:::::::w      a::::a    a:::::a      t::::::tttt:::::tc:::::::cccccc:::::ch:::::h     h:::::h
+B:::::::::::::::::B  u:::::::::::::::us::::::::::::::s       w:::::w         w:::::w       a:::::aaaa::::::a      tt::::::::::::::t c:::::::::::::::::ch:::::h     h:::::h
+B::::::::::::::::B    uu::::::::uu:::u s:::::::::::ss         w:::w           w:::w         a::::::::::aa:::a       tt:::::::::::tt  cc:::::::::::::::ch:::::h     h:::::h
+BBBBBBBBBBBBBBBBB       uuuuuuuu  uuuu  sssssssssss            www             www           aaaaaaaaaa  aaaa         ttttttttttt      cccccccccccccccchhhhhhh     hhhhhhh
 ```
 
 <h3>Diagnostic toolkit for message bus observability</h3>
