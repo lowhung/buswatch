@@ -8,7 +8,7 @@ description = "Diagnostic TUI for monitoring Caryatid message bus activity"
 license = "Apache-2.0"
 repository = "https://github.com/lowhung/buswatch"
 documentation = "https://docs.rs/buswatch-tui"
-readme = "../README.md"
+readme = "README.md"
 keywords = ["caryatid", "monitoring", "tui", "diagnostics", "message-bus"]
 categories = ["command-line-utilities", "development-tools::debugging"]
 
