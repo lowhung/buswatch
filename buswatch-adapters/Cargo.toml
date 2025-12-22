@@ -2,7 +2,7 @@
 name = "buswatch-adapters"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.85"
 authors = ["Matthew Hounslow"]
 description = "Pre-built adapters for collecting metrics from popular message buses"
 license = "Apache-2.0"
@@ -20,7 +20,7 @@ nats = ["dep:async-nats", "dep:tokio", "dep:futures-util"]
 all = ["rabbitmq", "kafka", "nats"]
 
 [dependencies]
-buswatch-types = { path = "../buswatch-types", features = ["serde"] }
+buswatch-types = { version = "0.1.0", path = "../buswatch-types", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"

@@ -2,7 +2,7 @@
 name = "buswatch-types"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.85"
 authors = ["Matthew Hounslow"]
 description = "Core types for message bus observability - the universal schema for buswatch"
 license = "Apache-2.0"
