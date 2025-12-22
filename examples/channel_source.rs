@@ -14,14 +14,10 @@
 //! cargo run --example channel_source
 //! ```
 
-use std::collections::BTreeMap;
 use std::thread;
 use std::time::Duration;
 
-use buswatch::{
-    ChannelSource, DataSource, SerializedModuleState, SerializedReadStreamState,
-    SerializedWriteStreamState,
-};
+use buswatch::{ChannelSource, DataSource, Snapshot};
 
 fn main() {
     println!("Channel source example");
@@ -37,47 +33,21 @@ fn main() {
         loop {
             counter += 1;
 
-            // Build a synthetic snapshot
-            let mut snapshot = BTreeMap::new();
-
-            // Simulate a "Producer" module
-            let mut producer_writes = BTreeMap::new();
-            producer_writes.insert(
-                "events".to_string(),
-                SerializedWriteStreamState {
-                    written: counter * 10,
-                    pending_for: if counter % 5 == 0 {
-                        Some("100ms".to_string())
-                    } else {
-                        None
-                    },
-                },
-            );
-            snapshot.insert(
-                "Producer".to_string(),
-                SerializedModuleState {
-                    reads: BTreeMap::new(),
-                    writes: producer_writes,
-                },
-            );
-
-            // Simulate a "Consumer" module
-            let mut consumer_reads = BTreeMap::new();
-            consumer_reads.insert(
-                "events".to_string(),
-                SerializedReadStreamState {
-                    read: counter * 10 - 2,
-                    unread: Some(2),
-                    pending_for: None,
-                },
-            );
-            snapshot.insert(
-                "Consumer".to_string(),
-                SerializedModuleState {
-                    reads: consumer_reads,
-                    writes: BTreeMap::new(),
-                },
-            );
+            // Build a synthetic snapshot using the builder pattern
+            let snapshot = Snapshot::builder()
+                .module("Producer", |m| {
+                    m.write("events", |w| {
+                        let mut builder = w.count(counter * 10);
+                        if counter % 5 == 0 {
+                            builder = builder.pending(Duration::from_millis(100));
+                        }
+                        builder
+                    })
+                })
+                .module("Consumer", |m| {
+                    m.read("events", |r| r.count(counter * 10 - 2).backlog(2))
+                })
+                .build();
 
             // Send the snapshot
             if tx.send(snapshot).is_err() {
@@ -94,25 +64,24 @@ fn main() {
     loop {
         if let Some(snapshot) = source.poll() {
             println!("Received snapshot:");
-            for (name, state) in &snapshot {
+            for (name, state) in snapshot.iter() {
                 println!("  Module: {}", name);
                 for (topic, read) in &state.reads {
                     println!(
                         "    Read from '{}': {} messages, {} unread",
                         topic,
-                        read.read,
-                        read.unread.unwrap_or(0)
+                        read.count,
+                        read.backlog.unwrap_or(0)
                     );
                 }
                 for (topic, write) in &state.writes {
                     println!(
                         "    Write to '{}': {} messages{}",
                         topic,
-                        write.written,
+                        write.count,
                         write
-                            .pending_for
-                            .as_ref()
-                            .map(|d| format!(" (pending: {})", d))
+                            .pending
+                            .map(|d| format!(" (pending: {}us)", d.as_micros()))
                             .unwrap_or_default()
                     );
                 }

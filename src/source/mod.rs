@@ -11,7 +11,8 @@ mod stream;
 pub use channel::ChannelSource;
 pub use file::FileSource;
 pub use snapshot::{
-    MonitorSnapshot, SerializedModuleState, SerializedReadStreamState, SerializedWriteStreamState,
+    Microseconds, ModuleMetrics, MonitorSnapshot, ReadMetrics, SchemaVersion, Snapshot,
+    WriteMetrics,
 };
 pub use stream::StreamSource;
 

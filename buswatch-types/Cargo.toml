@@ -1,0 +1,29 @@
+[package]
+name = "buswatch-types"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["Matthew Hounslow"]
+description = "Core types for message bus observability - the universal schema for buswatch"
+license = "Apache-2.0"
+repository = "https://github.com/lowhung/buswatch"
+documentation = "https://docs.rs/buswatch-types"
+readme = "README.md"
+keywords = ["message-bus", "observability", "monitoring", "metrics", "instrumentation"]
+categories = ["data-structures", "encoding", "development-tools::debugging"]
+
+[features]
+default = ["std"]
+std = []
+serde = ["dep:serde"]
+minicbor = ["dep:minicbor"]
+# Convenience feature for all serialization formats
+all = ["serde", "minicbor"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"], optional = true }
+minicbor = { version = "0.25", features = ["derive", "std"], optional = true }
+
+[dev-dependencies]
+serde_json = "1"
+minicbor = { version = "0.25", features = ["std"] }
