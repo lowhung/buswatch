@@ -46,9 +46,15 @@ mod instrumentor;
 mod output;
 mod state;
 
+#[cfg(feature = "otel")]
+pub mod otel;
+
 pub use handle::ModuleHandle;
 pub use instrumentor::{Instrumentor, InstrumentorBuilder};
 pub use output::Output;
+
+#[cfg(feature = "otel")]
+pub use otel::{OtelConfig, OtelExporter};
 
 // Re-export types for convenience
 pub use buswatch_types::{Microseconds, ModuleMetrics, ReadMetrics, Snapshot, WriteMetrics};
