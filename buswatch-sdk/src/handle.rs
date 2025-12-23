@@ -202,4 +202,115 @@ mod tests {
         let state = handle.state.get_or_create_read("topic");
         assert!(state.pending_since.read().is_none());
     }
+
+    #[test]
+    fn record_write_updates_global_topic_counter() {
+        let global = Arc::new(GlobalState::default());
+        let state = global.register_module("producer");
+        let handle = ModuleHandle {
+            state,
+            global: global.clone(),
+            name: "producer".to_string(),
+        };
+
+        handle.record_write("events", 50);
+        handle.record_write("events", 25);
+
+        let counter = global.get_topic_write_counter("events");
+        assert_eq!(counter.load(std::sync::atomic::Ordering::Relaxed), 75);
+    }
+
+    #[test]
+    fn start_write_sets_pending_and_guard_clears_it() {
+        let handle = create_handle();
+
+        {
+            let _guard = handle.start_write("output");
+            let state = handle.state.get_or_create_write("output");
+            assert!(state.pending_since.read().is_some());
+        }
+
+        let state = handle.state.get_or_create_write("output");
+        assert!(state.pending_since.read().is_none());
+    }
+
+    #[test]
+    fn set_read_pending_directly() {
+        let handle = create_handle();
+
+        handle.set_read_pending("topic", Some(Instant::now()));
+        let state = handle.state.get_or_create_read("topic");
+        assert!(state.pending_since.read().is_some());
+
+        handle.set_read_pending("topic", None);
+        assert!(state.pending_since.read().is_none());
+    }
+
+    #[test]
+    fn set_write_pending_directly() {
+        let handle = create_handle();
+
+        handle.set_write_pending("topic", Some(Instant::now()));
+        let state = handle.state.get_or_create_write("topic");
+        assert!(state.pending_since.read().is_some());
+
+        handle.set_write_pending("topic", None);
+        assert!(state.pending_since.read().is_none());
+    }
+
+    #[test]
+    fn module_handle_is_clone() {
+        let handle1 = create_handle();
+        let handle2 = handle1.clone();
+
+        handle1.record_read("topic", 10);
+        handle2.record_read("topic", 5);
+
+        // Both should contribute to same state
+        let metrics = handle1.state.collect();
+        assert_eq!(metrics.reads.get("topic").unwrap().count, 15);
+    }
+
+    #[test]
+    fn name_returns_module_name() {
+        let handle = create_handle();
+        assert_eq!(handle.name(), "test");
+    }
+
+    #[test]
+    fn multiple_topics_independent() {
+        let handle = create_handle();
+
+        handle.record_read("topic-a", 10);
+        handle.record_read("topic-b", 20);
+        handle.record_write("topic-c", 30);
+
+        let metrics = handle.state.collect();
+        assert_eq!(metrics.reads.get("topic-a").unwrap().count, 10);
+        assert_eq!(metrics.reads.get("topic-b").unwrap().count, 20);
+        assert_eq!(metrics.writes.get("topic-c").unwrap().count, 30);
+    }
+
+    #[test]
+    fn pending_guard_measures_elapsed_time() {
+        let handle = create_handle();
+
+        let _guard = handle.start_read("topic");
+        std::thread::sleep(std::time::Duration::from_millis(10));
+
+        let metrics = handle.state.collect();
+        let pending = metrics.reads.get("topic").unwrap().pending;
+
+        assert!(pending.is_some());
+        // Should be at least 10ms (10000 microseconds)
+        assert!(pending.unwrap().as_micros() >= 10000);
+    }
+
+    #[test]
+    fn debug_format_shows_name() {
+        let handle = create_handle();
+        let debug = format!("{:?}", handle);
+        assert!(debug.contains("test"));
+        assert!(debug.contains("ModuleHandle"));
+    }
 }
