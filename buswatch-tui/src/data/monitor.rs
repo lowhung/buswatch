@@ -309,3 +309,200 @@ impl UnhealthyTopic {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use buswatch_types::Snapshot;
+
+    fn default_thresholds() -> Thresholds {
+        Thresholds::default()
+    }
+
+    fn make_snapshot_json(modules_json: &str) -> String {
+        format!(
+            r#"{{"version":{{"major":1,"minor":0}},"timestamp_ms":1000,"modules":{{{}}}}}"#,
+            modules_json
+        )
+    }
+
+    #[test]
+    fn thresholds_default_values() {
+        let t = Thresholds::default();
+        assert_eq!(t.pending_warning, Duration::from_secs(1));
+        assert_eq!(t.pending_critical, Duration::from_secs(10));
+        assert_eq!(t.unread_warning, 1000);
+        assert_eq!(t.unread_critical, 5000);
+    }
+
+    #[test]
+    fn health_status_ordering() {
+        assert!(HealthStatus::Healthy < HealthStatus::Warning);
+        assert!(HealthStatus::Warning < HealthStatus::Critical);
+        assert!(HealthStatus::Healthy < HealthStatus::Critical);
+    }
+
+    #[test]
+    fn health_status_symbols() {
+        assert_eq!(HealthStatus::Healthy.symbol(), "OK");
+        assert_eq!(HealthStatus::Warning.symbol(), "WARN");
+        assert_eq!(HealthStatus::Critical.symbol(), "CRIT");
+    }
+
+    #[test]
+    fn parse_empty_snapshot() {
+        let json = make_snapshot_json("");
+        let data = MonitorData::parse(&json, &default_thresholds()).unwrap();
+        assert!(data.modules.is_empty());
+    }
+
+    #[test]
+    fn parse_single_module() {
+        let json = make_snapshot_json(
+            r#""service":{"reads":{"input":{"count":100}},"writes":{"output":{"count":50}}}"#,
+        );
+        let data = MonitorData::parse(&json, &default_thresholds()).unwrap();
+
+        assert_eq!(data.modules.len(), 1);
+        assert_eq!(data.modules[0].name, "service");
+        assert_eq!(data.modules[0].total_read, 100);
+        assert_eq!(data.modules[0].total_written, 50);
+    }
+
+    #[test]
+    fn module_health_is_worst_of_topics() {
+        // Create a module with one healthy read and one critical read
+        let json = make_snapshot_json(
+            r#""service":{"reads":{"healthy":{"count":100},"critical":{"count":50,"backlog":10000}},"writes":{}}"#,
+        );
+        let data = MonitorData::parse(&json, &default_thresholds()).unwrap();
+
+        assert_eq!(data.modules[0].health, HealthStatus::Critical);
+    }
+
+    #[test]
+    fn read_status_healthy_when_under_thresholds() {
+        let json = make_snapshot_json(
+            r#""service":{"reads":{"topic":{"count":100,"backlog":500}},"writes":{}}"#,
+        );
+        let data = MonitorData::parse(&json, &default_thresholds()).unwrap();
+
+        assert_eq!(data.modules[0].reads[0].status, HealthStatus::Healthy);
+    }
+
+    #[test]
+    fn read_status_warning_when_backlog_exceeds_warning_threshold() {
+        let json = make_snapshot_json(
+            r#""service":{"reads":{"topic":{"count":100,"backlog":1500}},"writes":{}}"#,
+        );
+        let data = MonitorData::parse(&json, &default_thresholds()).unwrap();
+
+        assert_eq!(data.modules[0].reads[0].status, HealthStatus::Warning);
+    }
+
+    #[test]
+    fn read_status_critical_when_backlog_exceeds_critical_threshold() {
+        let json = make_snapshot_json(
+            r#""service":{"reads":{"topic":{"count":100,"backlog":6000}},"writes":{}}"#,
+        );
+        let data = MonitorData::parse(&json, &default_thresholds()).unwrap();
+
+        assert_eq!(data.modules[0].reads[0].status, HealthStatus::Critical);
+    }
+
+    #[test]
+    fn modules_sorted_by_health_critical_first() {
+        let json = make_snapshot_json(
+            r#""healthy":{"reads":{},"writes":{}},
+               "critical":{"reads":{"t":{"count":0,"backlog":10000}},"writes":{}},
+               "warning":{"reads":{"t":{"count":0,"backlog":2000}},"writes":{}}"#,
+        );
+        let data = MonitorData::parse(&json, &default_thresholds()).unwrap();
+
+        assert_eq!(data.modules[0].name, "critical");
+        assert_eq!(data.modules[1].name, "warning");
+        assert_eq!(data.modules[2].name, "healthy");
+    }
+
+    #[test]
+    fn topics_sorted_by_status_within_module() {
+        let json = make_snapshot_json(
+            r#""service":{"reads":{
+                "healthy":{"count":100},
+                "critical":{"count":0,"backlog":10000},
+                "warning":{"count":0,"backlog":2000}
+            },"writes":{}}"#,
+        );
+        let data = MonitorData::parse(&json, &default_thresholds()).unwrap();
+
+        let reads = &data.modules[0].reads;
+        assert_eq!(reads[0].topic, "critical");
+        assert_eq!(reads[1].topic, "warning");
+        assert_eq!(reads[2].topic, "healthy");
+    }
+
+    #[test]
+    fn unhealthy_topics_returns_only_non_healthy() {
+        let json = make_snapshot_json(
+            r#""service":{"reads":{
+                "healthy":{"count":100},
+                "warning":{"count":0,"backlog":2000}
+            },"writes":{}}"#,
+        );
+        let data = MonitorData::parse(&json, &default_thresholds()).unwrap();
+
+        let unhealthy = data.unhealthy_topics();
+        assert_eq!(unhealthy.len(), 1);
+        assert_eq!(unhealthy[0].1.topic(), "warning");
+    }
+
+    #[test]
+    fn unhealthy_topic_accessors() {
+        let read = TopicRead {
+            topic: "orders".to_string(),
+            read: 100,
+            pending_for: Some(Duration::from_secs(5)),
+            unread: Some(1500),
+            status: HealthStatus::Warning,
+        };
+        let unhealthy = UnhealthyTopic::Read(read);
+
+        assert_eq!(unhealthy.topic(), "orders");
+        assert_eq!(unhealthy.status(), HealthStatus::Warning);
+        assert_eq!(unhealthy.pending_for(), Some(Duration::from_secs(5)));
+    }
+
+    #[test]
+    fn from_snapshot_works_directly() {
+        let snapshot = Snapshot::builder()
+            .timestamp_ms(1000)
+            .module("test", |m| m.read("topic", |r| r.count(42)))
+            .build();
+
+        let data = MonitorData::from_snapshot(snapshot, &default_thresholds());
+        assert_eq!(data.modules.len(), 1);
+        assert_eq!(data.modules[0].total_read, 42);
+    }
+
+    #[test]
+    fn pending_duration_converted_correctly() {
+        // pending is in microseconds in the JSON
+        let json = make_snapshot_json(
+            r#""service":{"reads":{"topic":{"count":100,"pending":15000000}},"writes":{}}"#,
+        );
+        let data = MonitorData::parse(&json, &default_thresholds()).unwrap();
+
+        let pending = data.modules[0].reads[0].pending_for.unwrap();
+        assert_eq!(pending, Duration::from_secs(15));
+    }
+
+    #[test]
+    fn write_pending_triggers_warning() {
+        let json = make_snapshot_json(
+            r#""service":{"reads":{},"writes":{"topic":{"count":100,"pending":5000000}}}"#,
+        );
+        let data = MonitorData::parse(&json, &default_thresholds()).unwrap();
+
+        assert_eq!(data.modules[0].writes[0].status, HealthStatus::Warning);
+    }
+}
