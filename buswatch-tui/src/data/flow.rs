@@ -114,7 +114,7 @@ mod tests {
 
         assert_eq!(graph.topics, vec!["events"]);
         assert_eq!(graph.producers.get("events").unwrap(), &vec!["api"]);
-        assert!(graph.consumers.get("events").is_none());
+        assert!(!graph.consumers.contains_key("events"));
     }
 
     #[test]
@@ -123,7 +123,7 @@ mod tests {
         let graph = DataFlowGraph::from_monitor_data(&data);
 
         assert_eq!(graph.topics, vec!["events"]);
-        assert!(graph.producers.get("events").is_none());
+        assert!(!graph.producers.contains_key("events"));
         assert_eq!(graph.consumers.get("events").unwrap(), &vec!["worker"]);
     }
 
