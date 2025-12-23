@@ -81,4 +81,104 @@ mod tests {
         let d2: Duration = m.into();
         assert_eq!(d, d2);
     }
+
+    #[test]
+    fn from_micros() {
+        let m = Microseconds::from_micros(1_500_000);
+        assert_eq!(m.as_micros(), 1_500_000);
+        assert_eq!(m.as_millis(), 1500);
+        assert_eq!(m.as_secs(), 1);
+    }
+
+    #[test]
+    fn from_millis() {
+        let m = Microseconds::from_millis(2500);
+        assert_eq!(m.as_micros(), 2_500_000);
+        assert_eq!(m.as_millis(), 2500);
+        assert_eq!(m.as_secs(), 2);
+    }
+
+    #[test]
+    fn from_secs() {
+        let m = Microseconds::from_secs(5);
+        assert_eq!(m.as_micros(), 5_000_000);
+        assert_eq!(m.as_millis(), 5000);
+        assert_eq!(m.as_secs(), 5);
+    }
+
+    #[test]
+    fn to_duration() {
+        let m = Microseconds::from_millis(567);
+        let d = m.to_duration();
+        assert_eq!(d, Duration::from_millis(567));
+    }
+
+    #[test]
+    fn default_is_zero() {
+        let m = Microseconds::default();
+        assert_eq!(m.as_micros(), 0);
+        assert_eq!(m.to_duration(), Duration::ZERO);
+    }
+
+    #[test]
+    fn ordering() {
+        let a = Microseconds::from_millis(100);
+        let b = Microseconds::from_millis(200);
+        let c = Microseconds::from_millis(100);
+
+        assert!(a < b);
+        assert!(b > a);
+        assert_eq!(a, c);
+        assert!(a <= c);
+        assert!(a >= c);
+    }
+
+    #[test]
+    fn truncation_behavior() {
+        // 1,500,999 microseconds should truncate to 1500 millis and 1 sec
+        let m = Microseconds::from_micros(1_500_999);
+        assert_eq!(m.as_millis(), 1500); // truncated, not rounded
+        assert_eq!(m.as_secs(), 1); // truncated
+    }
+
+    #[test]
+    fn large_values() {
+        // Test with very large values (days worth of microseconds)
+        let days_in_micros = 86_400_000_000u64 * 30; // 30 days
+        let m = Microseconds::from_micros(days_in_micros);
+        assert_eq!(m.as_secs(), 86_400 * 30);
+    }
+
+    #[test]
+    fn zero_values() {
+        let m = Microseconds::from_micros(0);
+        assert_eq!(m.as_micros(), 0);
+        assert_eq!(m.as_millis(), 0);
+        assert_eq!(m.as_secs(), 0);
+    }
+
+    #[test]
+    fn hash_impl() {
+        use std::collections::HashSet;
+        let mut set = HashSet::new();
+        set.insert(Microseconds::from_secs(1));
+        set.insert(Microseconds::from_secs(2));
+        set.insert(Microseconds::from_secs(1)); // duplicate
+        assert_eq!(set.len(), 2);
+    }
+
+    #[test]
+    fn copy_semantics() {
+        let m1 = Microseconds::from_secs(5);
+        let m2 = m1; // Copy
+        assert_eq!(m1, m2);
+        assert_eq!(m1.as_secs(), 5); // m1 still usable
+    }
+
+    #[test]
+    fn debug_format() {
+        let m = Microseconds::from_millis(1500);
+        let debug = format!("{:?}", m);
+        assert!(debug.contains("1500000"));
+    }
 }

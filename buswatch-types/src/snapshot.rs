@@ -210,6 +210,168 @@ mod tests {
         assert!(snapshot.version.is_compatible());
     }
 
+    #[test]
+    fn with_timestamp() {
+        let s = Snapshot::with_timestamp(1703160000000);
+        assert_eq!(s.timestamp_ms, 1703160000000);
+        assert!(s.is_empty());
+        assert!(s.version.is_compatible());
+    }
+
+    #[test]
+    fn builder_with_prebuilt_metrics() {
+        let metrics = ModuleMetrics::builder()
+            .read("input", |r| r.count(100))
+            .build();
+
+        let s = Snapshot::builder()
+            .timestamp_ms(1000)
+            .module_metrics("my-service", metrics)
+            .build();
+
+        assert_eq!(s.len(), 1);
+        assert!(s.get("my-service").is_some());
+    }
+
+    #[test]
+    fn get_module() {
+        let s = Snapshot::builder()
+            .module("test", |m| m.read("topic", |r| r.count(42)))
+            .build();
+
+        assert!(s.get("test").is_some());
+        assert!(s.get("nonexistent").is_none());
+
+        let m = s.get("test").unwrap();
+        assert_eq!(m.total_reads(), 42);
+    }
+
+    #[test]
+    fn iterate_modules() {
+        let s = Snapshot::builder()
+            .module("a", |m| m.read("t", |r| r.count(1)))
+            .module("b", |m| m.read("t", |r| r.count(2)))
+            .module("c", |m| m.read("t", |r| r.count(3)))
+            .build();
+
+        let names: Vec<_> = s.iter().map(|(name, _)| name.as_str()).collect();
+        // BTreeMap iterates in sorted order
+        assert_eq!(names, vec!["a", "b", "c"]);
+
+        let total: u64 = s.iter().map(|(_, m)| m.total_reads()).sum();
+        assert_eq!(total, 6);
+    }
+
+    #[test]
+    fn empty_snapshot() {
+        let s = Snapshot::builder().timestamp_ms(0).build();
+        assert!(s.is_empty());
+        assert_eq!(s.len(), 0);
+        assert_eq!(s.total_reads(), 0);
+        assert_eq!(s.total_writes(), 0);
+    }
+
+    #[test]
+    fn version_is_set() {
+        let s = Snapshot::builder().build();
+        assert_eq!(s.version.major, crate::SCHEMA_VERSION);
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn new_has_current_timestamp() {
+        let before = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
+
+        let s = Snapshot::new();
+
+        let after = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
+
+        assert!(s.timestamp_ms >= before);
+        assert!(s.timestamp_ms <= after);
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn default_uses_new() {
+        let before = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
+
+        let s = Snapshot::default();
+
+        let after = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
+
+        assert!(s.timestamp_ms >= before);
+        assert!(s.timestamp_ms <= after);
+    }
+
+    #[test]
+    fn zero_timestamp() {
+        let s = Snapshot::with_timestamp(0);
+        assert_eq!(s.timestamp_ms, 0);
+    }
+
+    #[test]
+    fn max_timestamp() {
+        let s = Snapshot::with_timestamp(u64::MAX);
+        assert_eq!(s.timestamp_ms, u64::MAX);
+    }
+
+    #[test]
+    fn many_modules() {
+        let mut builder = Snapshot::builder().timestamp_ms(0);
+        for i in 0..100 {
+            builder = builder.module(alloc::format!("module-{}", i), |m| {
+                m.read("topic", |r| r.count(i as u64))
+            });
+        }
+        let s = builder.build();
+
+        assert_eq!(s.len(), 100);
+        assert_eq!(s.total_reads(), (0..100u64).sum::<u64>());
+    }
+
+    #[test]
+    fn snapshot_builder_default() {
+        let b = SnapshotBuilder::default();
+        let s = b.build();
+        assert!(s.is_empty());
+    }
+
+    #[test]
+    fn clone_and_equality() {
+        let s1 = Snapshot::builder()
+            .timestamp_ms(1000)
+            .module("test", |m| m.read("t", |r| r.count(42)))
+            .build();
+        let s2 = s1.clone();
+        assert_eq!(s1, s2);
+    }
+
+    #[test]
+    fn debug_format() {
+        let s = Snapshot::builder()
+            .module("test", |m| m.read("t", |r| r.count(1)))
+            .build();
+        let debug = alloc::format!("{:?}", s);
+        assert!(debug.contains("Snapshot"));
+        assert!(debug.contains("test"));
+    }
+
+    // ========================================================================
+    // Serialization Tests
+    // ========================================================================
+
     #[cfg(feature = "serde")]
     #[test]
     fn test_serde_roundtrip() {
@@ -222,6 +384,64 @@ mod tests {
         let parsed: Snapshot = serde_json::from_str(&json).unwrap();
 
         assert_eq!(snapshot, parsed);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn serde_json_structure() {
+        let s = Snapshot::builder()
+            .timestamp_ms(1703160000000)
+            .module("test", |m| m.read("topic", |r| r.count(42)))
+            .build();
+
+        let json: serde_json::Value = serde_json::to_value(&s).unwrap();
+
+        assert!(json.get("version").is_some());
+        assert!(json.get("timestamp_ms").is_some());
+        assert!(json.get("modules").is_some());
+
+        let version = json.get("version").unwrap();
+        assert_eq!(version.get("major").unwrap(), crate::SCHEMA_VERSION);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn serde_deserialize_from_external_json() {
+        let json = r#"{
+            "version": { "major": 1, "minor": 0 },
+            "timestamp_ms": 1703160000000,
+            "modules": {
+                "my-service": {
+                    "reads": {
+                        "input": { "count": 100, "backlog": 5 }
+                    },
+                    "writes": {
+                        "output": { "count": 95 }
+                    }
+                }
+            }
+        }"#;
+
+        let s: Snapshot = serde_json::from_str(json).unwrap();
+        assert_eq!(s.timestamp_ms, 1703160000000);
+        assert_eq!(s.len(), 1);
+
+        let service = s.get("my-service").unwrap();
+        assert_eq!(service.reads.get("input").unwrap().count, 100);
+        assert_eq!(service.reads.get("input").unwrap().backlog, Some(5));
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn serde_pretty_print() {
+        let s = Snapshot::builder()
+            .timestamp_ms(1000)
+            .module("test", |m| m.read("t", |r| r.count(1)))
+            .build();
+
+        let pretty = serde_json::to_string_pretty(&s).unwrap();
+        assert!(pretty.contains('\n'));
+        assert!(pretty.contains("  ")); // indentation
     }
 
     #[cfg(feature = "minicbor")]
