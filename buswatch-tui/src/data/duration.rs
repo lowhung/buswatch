@@ -68,4 +68,73 @@ mod tests {
         let d = parse_duration("0ns").unwrap();
         assert_eq!(d.as_nanos(), 0);
     }
+
+    #[test]
+    fn parse_microseconds_with_us_suffix() {
+        let d = parse_duration("500us").unwrap();
+        assert_eq!(d.as_nanos(), 500_000);
+    }
+
+    #[test]
+    fn parse_whole_seconds() {
+        let d = parse_duration("5s").unwrap();
+        assert_eq!(d.as_secs(), 5);
+    }
+
+    #[test]
+    fn parse_with_whitespace() {
+        let d = parse_duration("  100ms  ").unwrap();
+        assert_eq!(d.as_millis(), 100);
+    }
+
+    #[test]
+    fn parse_unknown_format_fails() {
+        let result = parse_duration("100x");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn parse_invalid_number_fails() {
+        let result = parse_duration("abcms");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn format_zero() {
+        assert_eq!(format_duration(Duration::ZERO), "0ns");
+    }
+
+    #[test]
+    fn format_nanoseconds() {
+        assert_eq!(format_duration(Duration::from_nanos(500)), "500ns");
+    }
+
+    #[test]
+    fn format_microseconds() {
+        let d = Duration::from_nanos(1500);
+        let s = format_duration(d);
+        assert!(s.contains("µs"));
+    }
+
+    #[test]
+    fn format_milliseconds() {
+        let d = Duration::from_micros(1500);
+        let s = format_duration(d);
+        assert!(s.contains("ms"));
+    }
+
+    #[test]
+    fn format_seconds() {
+        let d = Duration::from_millis(1500);
+        let s = format_duration(d);
+        assert!(s.contains("s"));
+        assert!(!s.contains("ms")); // Should be "1.50s", not "1500.00ms"
+    }
+
+    #[test]
+    fn format_large_duration() {
+        let d = Duration::from_secs(3600); // 1 hour
+        let s = format_duration(d);
+        assert!(s.contains("3600"));
+    }
 }

@@ -126,3 +126,154 @@ impl History {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data::monitor::{HealthStatus, ModuleData, Thresholds};
+    use buswatch_types::Snapshot;
+
+    fn make_monitor_data(modules: Vec<(&str, u64, u64)>) -> MonitorData {
+        let module_data: Vec<ModuleData> = modules
+            .into_iter()
+            .map(|(name, reads, writes)| ModuleData {
+                name: name.to_string(),
+                reads: vec![],
+                writes: vec![],
+                total_read: reads,
+                total_written: writes,
+                health: HealthStatus::Healthy,
+            })
+            .collect();
+
+        MonitorData {
+            modules: module_data,
+            last_updated: Instant::now(),
+        }
+    }
+
+    #[test]
+    fn new_history_is_empty() {
+        let h = History::new();
+        assert!(h.module_reads.is_empty());
+        assert!(h.module_writes.is_empty());
+        assert!(h.timestamps.is_empty());
+    }
+
+    #[test]
+    fn record_stores_module_data() {
+        let mut h = History::new();
+        let data = make_monitor_data(vec![("service", 100, 50)]);
+
+        h.record(&data);
+
+        assert!(h.module_reads.contains_key("service"));
+        assert!(h.module_writes.contains_key("service"));
+        assert_eq!(h.module_reads.get("service").unwrap().len(), 1);
+    }
+
+    #[test]
+    fn record_accumulates_history() {
+        let mut h = History::new();
+
+        for i in 0..5 {
+            let data = make_monitor_data(vec![("service", i * 10, i * 5)]);
+            h.record(&data);
+        }
+
+        assert_eq!(h.module_reads.get("service").unwrap().len(), 5);
+        assert_eq!(h.timestamps.len(), 5);
+    }
+
+    #[test]
+    fn history_caps_at_max_size() {
+        let mut h = History::new();
+
+        // Record more than MAX_HISTORY_SIZE (60) entries
+        for i in 0..70 {
+            let data = make_monitor_data(vec![("service", i, 0)]);
+            h.record(&data);
+        }
+
+        // Should be capped at 60
+        assert_eq!(h.module_reads.get("service").unwrap().len(), 60);
+        assert_eq!(h.timestamps.len(), 60);
+    }
+
+    #[test]
+    fn sparkline_empty_for_unknown_module() {
+        let h = History::new();
+        let sparkline = h.get_reads_sparkline("unknown");
+        assert!(sparkline.is_empty());
+    }
+
+    #[test]
+    fn sparkline_empty_with_single_reading() {
+        let mut h = History::new();
+        let data = make_monitor_data(vec![("service", 100, 0)]);
+        h.record(&data);
+
+        let sparkline = h.get_reads_sparkline("service");
+        assert!(sparkline.is_empty()); // Need at least 2 readings
+    }
+
+    #[test]
+    fn sparkline_returns_normalized_deltas() {
+        let mut h = History::new();
+
+        // Record increasing values
+        for i in 0..5 {
+            let data = make_monitor_data(vec![("service", i * 100, 0)]);
+            h.record(&data);
+        }
+
+        let sparkline = h.get_reads_sparkline("service");
+        assert_eq!(sparkline.len(), 4); // 5 readings = 4 deltas
+
+        // All deltas are equal (100), so all should normalize to same value
+        assert!(sparkline.iter().all(|&v| v == sparkline[0]));
+    }
+
+    #[test]
+    fn read_rate_none_for_unknown_module() {
+        let h = History::new();
+        assert!(h.get_read_rate("unknown").is_none());
+    }
+
+    #[test]
+    fn read_rate_none_with_single_reading() {
+        let mut h = History::new();
+        let data = make_monitor_data(vec![("service", 100, 0)]);
+        h.record(&data);
+
+        assert!(h.get_read_rate("service").is_none());
+    }
+
+    #[test]
+    fn read_rate_calculated_from_last_two_readings() {
+        let mut h = History::new();
+
+        let data1 = make_monitor_data(vec![("service", 100, 0)]);
+        h.record(&data1);
+
+        // Small delay to ensure non-zero elapsed time
+        std::thread::sleep(std::time::Duration::from_millis(10));
+
+        let data2 = make_monitor_data(vec![("service", 200, 0)]);
+        h.record(&data2);
+
+        let rate = h.get_read_rate("service");
+        assert!(rate.is_some());
+        // Rate should be positive (100 messages over ~10ms)
+        assert!(rate.unwrap() > 0.0);
+    }
+
+    #[test]
+    fn default_is_same_as_new() {
+        let h1 = History::new();
+        let h2 = History::default();
+
+        assert_eq!(h1.module_reads.len(), h2.module_reads.len());
+        assert_eq!(h1.timestamps.len(), h2.timestamps.len());
+    }
+}

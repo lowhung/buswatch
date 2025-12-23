@@ -289,6 +289,215 @@ mod tests {
     use super::*;
     use core::time::Duration;
 
+    // ========================================================================
+    // ReadMetrics Tests
+    // ========================================================================
+
+    #[test]
+    fn read_metrics_new_with_count() {
+        let r = ReadMetrics::new(100);
+        assert_eq!(r.count, 100);
+        assert!(r.backlog.is_none());
+        assert!(r.pending.is_none());
+        assert!(r.rate.is_none());
+    }
+
+    #[test]
+    fn read_metrics_builder_all_fields() {
+        let r = ReadMetrics::builder()
+            .count(500)
+            .backlog(50)
+            .pending(Duration::from_secs(2))
+            .rate(25.5)
+            .build();
+
+        assert_eq!(r.count, 500);
+        assert_eq!(r.backlog, Some(50));
+        assert_eq!(r.pending, Some(Microseconds::from_secs(2)));
+        assert_eq!(r.rate, Some(25.5));
+    }
+
+    #[test]
+    fn read_metrics_builder_partial_fields() {
+        let r = ReadMetrics::builder().count(100).backlog(10).build();
+
+        assert_eq!(r.count, 100);
+        assert_eq!(r.backlog, Some(10));
+        assert!(r.pending.is_none());
+        assert!(r.rate.is_none());
+    }
+
+    #[test]
+    fn read_metrics_builder_default_count() {
+        let r = ReadMetrics::builder().build();
+        assert_eq!(r.count, 0);
+    }
+
+    #[test]
+    fn read_metrics_is_healthy_with_no_issues() {
+        let r = ReadMetrics::new(100);
+        assert!(r.is_healthy(10, Microseconds::from_secs(5)));
+    }
+
+    #[test]
+    fn read_metrics_is_healthy_backlog_at_threshold() {
+        let r = ReadMetrics::builder().count(100).backlog(10).build();
+        assert!(r.is_healthy(10, Microseconds::from_secs(5))); // equal is healthy
+    }
+
+    #[test]
+    fn read_metrics_is_unhealthy_backlog_exceeds_threshold() {
+        let r = ReadMetrics::builder().count(100).backlog(11).build();
+        assert!(!r.is_healthy(10, Microseconds::from_secs(5)));
+    }
+
+    #[test]
+    fn read_metrics_is_healthy_pending_at_threshold() {
+        let r = ReadMetrics::builder()
+            .count(100)
+            .pending(Duration::from_secs(5))
+            .build();
+        assert!(r.is_healthy(10, Microseconds::from_secs(5))); // equal is healthy
+    }
+
+    #[test]
+    fn read_metrics_is_unhealthy_pending_exceeds_threshold() {
+        let r = ReadMetrics::builder()
+            .count(100)
+            .pending(Duration::from_secs(6))
+            .build();
+        assert!(!r.is_healthy(10, Microseconds::from_secs(5)));
+    }
+
+    #[test]
+    fn read_metrics_is_unhealthy_both_exceed() {
+        let r = ReadMetrics::builder()
+            .count(100)
+            .backlog(20)
+            .pending(Duration::from_secs(10))
+            .build();
+        assert!(!r.is_healthy(10, Microseconds::from_secs(5)));
+    }
+
+    #[test]
+    fn read_metrics_default_is_empty() {
+        let r = ReadMetrics::default();
+        assert_eq!(r.count, 0);
+        assert!(r.backlog.is_none());
+        assert!(r.pending.is_none());
+        assert!(r.rate.is_none());
+    }
+
+    #[test]
+    fn read_metrics_clone_and_equality() {
+        let r1 = ReadMetrics::builder().count(100).backlog(5).build();
+        let r2 = r1.clone();
+        assert_eq!(r1, r2);
+    }
+
+    #[test]
+    fn read_metrics_max_values() {
+        let r = ReadMetrics::builder()
+            .count(u64::MAX)
+            .backlog(u64::MAX)
+            .build();
+        assert_eq!(r.count, u64::MAX);
+        assert_eq!(r.backlog, Some(u64::MAX));
+    }
+
+    #[test]
+    fn read_metrics_special_rate_values() {
+        // Negative rate (counts could theoretically decrease)
+        let r = ReadMetrics::builder().rate(-10.0).build();
+        assert_eq!(r.rate, Some(-10.0));
+
+        // NaN rate
+        let r = ReadMetrics::builder().rate(f64::NAN).build();
+        assert!(r.rate.unwrap().is_nan());
+
+        // Infinity rate
+        let r = ReadMetrics::builder().rate(f64::INFINITY).build();
+        assert!(r.rate.unwrap().is_infinite());
+    }
+
+    // ========================================================================
+    // WriteMetrics Tests
+    // ========================================================================
+
+    #[test]
+    fn write_metrics_new_with_count() {
+        let w = WriteMetrics::new(200);
+        assert_eq!(w.count, 200);
+        assert!(w.pending.is_none());
+        assert!(w.rate.is_none());
+    }
+
+    #[test]
+    fn write_metrics_builder_all_fields() {
+        let w = WriteMetrics::builder()
+            .count(1000)
+            .pending(Duration::from_millis(500))
+            .rate(100.0)
+            .build();
+
+        assert_eq!(w.count, 1000);
+        assert_eq!(w.pending, Some(Microseconds::from_millis(500)));
+        assert_eq!(w.rate, Some(100.0));
+    }
+
+    #[test]
+    fn write_metrics_builder_partial_fields() {
+        let w = WriteMetrics::builder().count(50).build();
+
+        assert_eq!(w.count, 50);
+        assert!(w.pending.is_none());
+        assert!(w.rate.is_none());
+    }
+
+    #[test]
+    fn write_metrics_is_healthy_with_no_pending() {
+        let w = WriteMetrics::new(100);
+        assert!(w.is_healthy(Microseconds::from_secs(5)));
+    }
+
+    #[test]
+    fn write_metrics_is_healthy_pending_at_threshold() {
+        let w = WriteMetrics::builder()
+            .count(100)
+            .pending(Duration::from_secs(5))
+            .build();
+        assert!(w.is_healthy(Microseconds::from_secs(5)));
+    }
+
+    #[test]
+    fn write_metrics_is_unhealthy_pending_exceeds_threshold() {
+        let w = WriteMetrics::builder()
+            .count(100)
+            .pending(Duration::from_secs(6))
+            .build();
+        assert!(!w.is_healthy(Microseconds::from_secs(5)));
+    }
+
+    #[test]
+    fn write_metrics_default_is_empty() {
+        let w = WriteMetrics::default();
+        assert_eq!(w.count, 0);
+        assert!(w.pending.is_none());
+        assert!(w.rate.is_none());
+    }
+
+    // ========================================================================
+    // ModuleMetrics Tests
+    // ========================================================================
+
+    #[test]
+    fn module_metrics_new_is_empty() {
+        let m = ModuleMetrics::new();
+        assert!(m.is_empty());
+        assert_eq!(m.total_reads(), 0);
+        assert_eq!(m.total_writes(), 0);
+    }
+
     #[test]
     fn test_module_metrics_builder() {
         let metrics = ModuleMetrics::builder()
@@ -299,6 +508,134 @@ mod tests {
         assert_eq!(metrics.total_reads(), 100);
         assert_eq!(metrics.total_writes(), 95);
         assert_eq!(metrics.reads.get("input").unwrap().backlog, Some(5));
+    }
+
+    #[test]
+    fn module_metrics_builder_with_multiple_topics() {
+        let m = ModuleMetrics::builder()
+            .read("input-a", |r| r.count(100).backlog(5))
+            .read("input-b", |r| r.count(200))
+            .write("output-a", |w| w.count(150))
+            .write("output-b", |w| w.count(140))
+            .build();
+
+        assert!(!m.is_empty());
+        assert_eq!(m.total_reads(), 300);
+        assert_eq!(m.total_writes(), 290);
+        assert_eq!(m.reads.len(), 2);
+        assert_eq!(m.writes.len(), 2);
+    }
+
+    #[test]
+    fn module_metrics_builder_only_reads() {
+        let m = ModuleMetrics::builder()
+            .read("events", |r| r.count(500))
+            .build();
+
+        assert!(!m.is_empty());
+        assert_eq!(m.total_reads(), 500);
+        assert_eq!(m.total_writes(), 0);
+    }
+
+    #[test]
+    fn module_metrics_builder_only_writes() {
+        let m = ModuleMetrics::builder()
+            .write("events", |w| w.count(1000))
+            .build();
+
+        assert!(!m.is_empty());
+        assert_eq!(m.total_reads(), 0);
+        assert_eq!(m.total_writes(), 1000);
+    }
+
+    #[test]
+    fn module_metrics_is_empty_with_empty_collections() {
+        let m = ModuleMetrics::builder().build();
+        assert!(m.is_empty());
+    }
+
+    #[test]
+    fn module_metrics_access_individual_topics() {
+        let m = ModuleMetrics::builder()
+            .read("orders", |r| r.count(42).backlog(3))
+            .write("notifications", |w| w.count(40).rate(5.0))
+            .build();
+
+        let orders = m.reads.get("orders").unwrap();
+        assert_eq!(orders.count, 42);
+        assert_eq!(orders.backlog, Some(3));
+
+        let notifications = m.writes.get("notifications").unwrap();
+        assert_eq!(notifications.count, 40);
+        assert_eq!(notifications.rate, Some(5.0));
+    }
+
+    #[test]
+    fn module_metrics_default_is_empty() {
+        let m = ModuleMetrics::default();
+        assert!(m.is_empty());
+    }
+
+    #[test]
+    fn module_metrics_duplicate_topic_overwrites() {
+        let m = ModuleMetrics::builder()
+            .read("topic", |r| r.count(100))
+            .read("topic", |r| r.count(200)) // Same topic, should overwrite
+            .build();
+
+        assert_eq!(m.reads.len(), 1);
+        assert_eq!(m.reads.get("topic").unwrap().count, 200);
+    }
+
+    #[test]
+    fn module_metrics_unicode_topic_names() {
+        let m = ModuleMetrics::builder()
+            .read("订单", |r| r.count(100))
+            .read("événements", |r| r.count(200))
+            .read("イベント", |r| r.count(300))
+            .build();
+
+        assert_eq!(m.reads.get("订单").unwrap().count, 100);
+        assert_eq!(m.reads.get("événements").unwrap().count, 200);
+        assert_eq!(m.reads.get("イベント").unwrap().count, 300);
+        assert_eq!(m.total_reads(), 600);
+    }
+
+    #[test]
+    fn module_metrics_special_characters_in_names() {
+        let m = ModuleMetrics::builder()
+            .read("topic/with/slashes", |r| r.count(1))
+            .read("topic.with.dots", |r| r.count(2))
+            .read("topic:with:colons", |r| r.count(3))
+            .read("topic-with-dashes", |r| r.count(4))
+            .read("topic_with_underscores", |r| r.count(5))
+            .build();
+
+        assert_eq!(m.total_reads(), 15);
+    }
+
+    #[test]
+    fn module_metrics_empty_topic_name() {
+        let m = ModuleMetrics::builder()
+            .read("", |r| r.count(100))
+            .write("", |w| w.count(50))
+            .build();
+
+        assert_eq!(m.reads.get("").unwrap().count, 100);
+        assert_eq!(m.writes.get("").unwrap().count, 50);
+    }
+
+    #[test]
+    fn module_metrics_many_topics() {
+        let mut m_builder = ModuleMetrics::builder();
+        for i in 0..100 {
+            m_builder = m_builder.read(alloc::format!("read-topic-{}", i), |r| r.count(i as u64));
+            m_builder = m_builder.write(alloc::format!("write-topic-{}", i), |w| w.count(i as u64));
+        }
+        let m = m_builder.build();
+
+        assert_eq!(m.reads.len(), 100);
+        assert_eq!(m.writes.len(), 100);
     }
 
     #[test]
@@ -314,5 +651,30 @@ mod tests {
             .pending(Duration::from_secs(10))
             .build();
         assert!(!with_pending.is_healthy(10, Microseconds::from_secs(5)));
+    }
+
+    // ========================================================================
+    // Builder Default Tests
+    // ========================================================================
+
+    #[test]
+    fn read_metrics_builder_default() {
+        let b = ReadMetricsBuilder::default();
+        let r = b.build();
+        assert_eq!(r.count, 0);
+    }
+
+    #[test]
+    fn write_metrics_builder_default() {
+        let b = WriteMetricsBuilder::default();
+        let w = b.build();
+        assert_eq!(w.count, 0);
+    }
+
+    #[test]
+    fn module_metrics_builder_default() {
+        let b = ModuleMetricsBuilder::default();
+        let m = b.build();
+        assert!(m.is_empty());
     }
 }

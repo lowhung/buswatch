@@ -254,4 +254,120 @@ mod tests {
         assert_eq!(instrumentor.interval, Duration::from_millis(500));
         assert_eq!(instrumentor.outputs.len(), 1);
     }
+
+    #[test]
+    fn default_interval_is_one_second() {
+        let instrumentor = Instrumentor::new();
+        assert_eq!(instrumentor.interval, Duration::from_secs(1));
+    }
+
+    #[test]
+    fn default_has_no_outputs() {
+        let instrumentor = Instrumentor::new();
+        assert!(instrumentor.outputs.is_empty());
+    }
+
+    #[test]
+    fn builder_can_add_multiple_outputs() {
+        let instrumentor = Instrumentor::builder()
+            .output(Output::file("metrics1.json"))
+            .output(Output::file("metrics2.json"))
+            .output(Output::tcp("localhost:9090"))
+            .build();
+
+        assert_eq!(instrumentor.outputs.len(), 3);
+    }
+
+    #[test]
+    fn register_same_module_twice_returns_same_state() {
+        let instrumentor = Instrumentor::new();
+
+        let handle1 = instrumentor.register("service");
+        let handle2 = instrumentor.register("service");
+
+        handle1.record_read("topic", 10);
+        handle2.record_read("topic", 5);
+
+        let snapshot = instrumentor.collect();
+        let metrics = snapshot.modules.get("service").unwrap();
+        assert_eq!(metrics.reads.get("topic").unwrap().count, 15);
+    }
+
+    #[test]
+    fn collect_returns_snapshot_with_timestamp() {
+        let instrumentor = Instrumentor::new();
+        let _ = instrumentor.register("test");
+
+        let before = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
+
+        let snapshot = instrumentor.collect();
+
+        let after = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
+
+        assert!(snapshot.timestamp_ms >= before);
+        assert!(snapshot.timestamp_ms <= after);
+    }
+
+    #[test]
+    fn collect_includes_schema_version() {
+        let instrumentor = Instrumentor::new();
+        let snapshot = instrumentor.collect();
+        assert!(snapshot.version.is_compatible());
+    }
+
+    #[test]
+    fn instrumentor_default_same_as_new() {
+        let i1 = Instrumentor::new();
+        let i2 = Instrumentor::default();
+
+        assert_eq!(i1.interval, i2.interval);
+        assert_eq!(i1.outputs.len(), i2.outputs.len());
+    }
+
+    #[test]
+    fn builder_default_interval_when_not_specified() {
+        let instrumentor = Instrumentor::builder()
+            .output(Output::file("test.json"))
+            .build();
+
+        assert_eq!(instrumentor.interval, Duration::from_secs(1));
+    }
+
+    #[test]
+    fn complex_multi_module_scenario() {
+        let instrumentor = Instrumentor::new();
+
+        // Simulate a pipeline: API -> Processor -> Notifier
+        let api = instrumentor.register("api");
+        let processor = instrumentor.register("processor");
+        let notifier = instrumentor.register("notifier");
+
+        // API receives requests and writes to orders topic
+        api.record_write("orders", 1000);
+
+        // Processor reads orders, writes to notifications
+        processor.record_read("orders", 950);
+        processor.record_write("notifications", 950);
+
+        // Notifier reads notifications
+        notifier.record_read("notifications", 900);
+
+        let snapshot = instrumentor.collect();
+
+        // Verify backlogs
+        let proc_metrics = snapshot.modules.get("processor").unwrap();
+        assert_eq!(proc_metrics.reads.get("orders").unwrap().backlog, Some(50)); // 1000 - 950
+
+        let notif_metrics = snapshot.modules.get("notifier").unwrap();
+        assert_eq!(
+            notif_metrics.reads.get("notifications").unwrap().backlog,
+            Some(50)
+        ); // 950 - 900
+    }
 }

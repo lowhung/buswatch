@@ -251,7 +251,6 @@ mod tests {
 
     #[test]
     fn test_builder_defaults() {
-        // Just test that builder compiles correctly
         let builder = KafkaAdapter::builder()
             .brokers("localhost:9092")
             .group_id("test-group")
@@ -259,5 +258,52 @@ mod tests {
 
         assert!(builder.brokers.is_some());
         assert!(builder.group_id.is_some());
+    }
+
+    #[test]
+    fn builder_stores_brokers() {
+        let builder = KafkaAdapter::builder().brokers("broker1:9092,broker2:9092");
+        assert_eq!(builder.brokers.unwrap(), "broker1:9092,broker2:9092");
+    }
+
+    #[test]
+    fn builder_stores_group_id() {
+        let builder = KafkaAdapter::builder().group_id("my-consumer-group");
+        assert_eq!(builder.group_id.unwrap(), "my-consumer-group");
+    }
+
+    #[test]
+    fn builder_stores_group_filter() {
+        let builder = KafkaAdapter::builder().group_filter("prefix-");
+        assert_eq!(builder.group_filter.unwrap(), "prefix-");
+    }
+
+    #[test]
+    fn builder_stores_timeout() {
+        let builder = KafkaAdapter::builder().timeout(Duration::from_secs(30));
+        assert_eq!(builder.timeout.unwrap(), Duration::from_secs(30));
+    }
+
+    #[test]
+    fn builder_chains_all_options() {
+        let builder = KafkaAdapter::builder()
+            .brokers("localhost:9092")
+            .group_id("test")
+            .group_filter("app-")
+            .timeout(Duration::from_secs(15));
+
+        assert_eq!(builder.brokers.unwrap(), "localhost:9092");
+        assert_eq!(builder.group_id.unwrap(), "test");
+        assert_eq!(builder.group_filter.unwrap(), "app-");
+        assert_eq!(builder.timeout.unwrap(), Duration::from_secs(15));
+    }
+
+    #[test]
+    fn builder_default_is_empty() {
+        let builder = KafkaAdapterBuilder::default();
+        assert!(builder.brokers.is_none());
+        assert!(builder.group_id.is_none());
+        assert!(builder.group_filter.is_none());
+        assert!(builder.timeout.is_none());
     }
 }

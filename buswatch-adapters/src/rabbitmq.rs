@@ -359,4 +359,122 @@ mod tests {
         assert_eq!(write.count, 600);
         assert_eq!(write.rate, Some(10.5));
     }
+
+    #[test]
+    fn queue_with_no_consumers_shows_backlog_only() {
+        let adapter = RabbitMqAdapter::builder().build();
+
+        let queue = QueueInfo {
+            name: "idle-queue".to_string(),
+            messages_ready: 50,
+            messages_unacknowledged: 0,
+            consumers: 0, // No consumers
+            messages_delivered: None,
+            messages_published: Some(50),
+            message_stats: None,
+        };
+
+        let metrics = adapter.queue_to_metrics(&queue);
+
+        let read = metrics.reads.get("messages").unwrap();
+        assert_eq!(read.count, 0); // No delivered messages
+        assert_eq!(read.backlog, Some(50)); // But backlog is shown
+    }
+
+    #[test]
+    fn queue_with_no_message_stats_has_no_rates() {
+        let adapter = RabbitMqAdapter::builder().build();
+
+        let queue = QueueInfo {
+            name: "new-queue".to_string(),
+            messages_ready: 0,
+            messages_unacknowledged: 0,
+            consumers: 1,
+            messages_delivered: Some(10),
+            messages_published: Some(10),
+            message_stats: None,
+        };
+
+        let metrics = adapter.queue_to_metrics(&queue);
+
+        assert!(metrics.reads.get("messages").unwrap().rate.is_none());
+        assert!(metrics.writes.get("messages").unwrap().rate.is_none());
+    }
+
+    #[test]
+    fn builder_with_timeout() {
+        let adapter = RabbitMqAdapter::builder()
+            .timeout(Duration::from_secs(30))
+            .build();
+
+        // Can't directly test timeout, but verify it doesn't panic
+        assert_eq!(adapter.endpoint, "http://localhost:15672");
+    }
+
+    #[test]
+    fn urlencoded_handles_multiple_slashes() {
+        assert_eq!(urlencoded("/a/b/c"), "%2Fa%2Fb%2Fc");
+    }
+
+    #[test]
+    fn urlencoded_preserves_other_special_chars() {
+        // Only slashes are encoded by this function
+        assert_eq!(urlencoded("name:with:colons"), "name:with:colons");
+        assert_eq!(urlencoded("name.with.dots"), "name.with.dots");
+    }
+
+    #[test]
+    fn message_stats_rate_extraction() {
+        let stats = MessageStats {
+            publish_details: Some(RateDetails { rate: 100.5 }),
+            deliver_get_details: Some(RateDetails { rate: 99.2 }),
+        };
+
+        assert_eq!(stats.publish_rate(), Some(100.5));
+        assert_eq!(stats.deliver_get_rate(), Some(99.2));
+    }
+
+    #[test]
+    fn message_stats_missing_details_returns_none() {
+        let stats = MessageStats {
+            publish_details: None,
+            deliver_get_details: None,
+        };
+
+        assert_eq!(stats.publish_rate(), None);
+        assert_eq!(stats.deliver_get_rate(), None);
+    }
+
+    #[test]
+    fn queue_info_deserializes_from_json() {
+        let json = r#"{
+            "name": "orders",
+            "messages_ready": 42,
+            "messages_unacknowledged": 3,
+            "consumers": 2,
+            "message_stats": {
+                "publish_details": { "rate": 10.0 },
+                "deliver_get_details": { "rate": 9.5 }
+            }
+        }"#;
+
+        let queue: QueueInfo = serde_json::from_str(json).unwrap();
+        assert_eq!(queue.name, "orders");
+        assert_eq!(queue.messages_ready, 42);
+        assert_eq!(queue.consumers, 2);
+        assert_eq!(queue.message_stats.unwrap().publish_rate(), Some(10.0));
+    }
+
+    #[test]
+    fn queue_info_deserializes_with_missing_optional_fields() {
+        let json = r#"{
+            "name": "simple-queue"
+        }"#;
+
+        let queue: QueueInfo = serde_json::from_str(json).unwrap();
+        assert_eq!(queue.name, "simple-queue");
+        assert_eq!(queue.messages_ready, 0);
+        assert_eq!(queue.consumers, 0);
+        assert!(queue.message_stats.is_none());
+    }
 }

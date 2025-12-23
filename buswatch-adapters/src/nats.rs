@@ -200,4 +200,33 @@ mod tests {
         assert!(builder.url.is_some());
         assert_eq!(builder.url.unwrap(), "nats://localhost:4222");
     }
+
+    #[test]
+    fn builder_stores_url() {
+        let builder = NatsAdapter::builder().url("nats://nats.example.com:4222");
+        assert_eq!(builder.url.unwrap(), "nats://nats.example.com:4222");
+    }
+
+    #[test]
+    fn builder_stores_credentials_file() {
+        let builder = NatsAdapter::builder().credentials_file("/path/to/creds.txt");
+        assert_eq!(builder.credentials.unwrap(), "/path/to/creds.txt");
+    }
+
+    #[test]
+    fn builder_chains_options() {
+        let builder = NatsAdapter::builder()
+            .url("nats://localhost:4222")
+            .credentials_file("/etc/nats/creds");
+
+        assert_eq!(builder.url.unwrap(), "nats://localhost:4222");
+        assert_eq!(builder.credentials.unwrap(), "/etc/nats/creds");
+    }
+
+    #[test]
+    fn builder_default_is_empty() {
+        let builder = NatsAdapterBuilder::default();
+        assert!(builder.url.is_none());
+        assert!(builder.credentials.is_none());
+    }
 }
