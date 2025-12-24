@@ -16,6 +16,7 @@ categories = ["development-tools::debugging", "development-tools::profiling"]
 default = ["tokio"]
 tokio = ["dep:tokio"]
 otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", "tokio"]
+prometheus = ["tokio", "dep:hyper", "dep:hyper-util", "dep:http-body-util"]
 
 [dependencies]
 buswatch-types = { path = "../buswatch-types", features = ["serde"] }
@@ -29,6 +30,11 @@ tokio = { version = "1", features = ["time", "sync", "rt", "io-util", "net", "fs
 opentelemetry = { version = "0.31", optional = true }
 opentelemetry_sdk = { version = "0.31", features = ["metrics", "rt-tokio"], optional = true }
 opentelemetry-otlp = { version = "0.31", features = ["metrics", "http-proto", "reqwest-blocking-client"], optional = true }
+
+# Prometheus HTTP server (optional)
+hyper = { version = "1", features = ["server", "http1"], optional = true }
+hyper-util = { version = "0.1", features = ["tokio"], optional = true }
+http-body-util = { version = "0.1", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
