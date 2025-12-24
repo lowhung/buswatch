@@ -220,6 +220,17 @@ impl GlobalState {
             .clone()
     }
 
+    /// Unregister a module and remove it from internal state.
+    ///
+    /// Returns `true` if the module was found and removed, `false` if it didn't exist.
+    ///
+    /// Note: This does not affect global topic write counters, as those are shared
+    /// across all modules and used for backlog computation.
+    pub fn unregister_module(&self, name: &str) -> bool {
+        let mut modules = self.modules.write();
+        modules.remove(name).is_some()
+    }
+
     /// Collect all modules into a Snapshot.
     pub fn collect(&self) -> Snapshot {
         let modules = self.modules.read();
@@ -589,4 +600,128 @@ mod tests {
         let rate = compute_rate(None, 100, now);
         assert!(rate.is_none());
     }
+
+    #[test]
+    fn unregister_module_removes_module() {
+        let global = GlobalState::default();
+
+        let module1 = global.register_module("service-a");
+        let module2 = global.register_module("service-b");
+
+        module1
+            .get_or_create_read("topic")
+            .count
+            .fetch_add(10, Ordering::Relaxed);
+        module2
+            .get_or_create_read("topic")
+            .count
+            .fetch_add(20, Ordering::Relaxed);
+
+        // Verify both modules exist
+        let snapshot = global.collect();
+        assert_eq!(snapshot.modules.len(), 2);
+
+        // Unregister service-a
+        let removed = global.unregister_module("service-a");
+        assert!(removed, "Should return true when module is removed");
+
+        // Verify only service-b remains
+        let snapshot = global.collect();
+        assert_eq!(snapshot.modules.len(), 1);
+        assert!(snapshot.modules.contains_key("service-b"));
+        assert!(!snapshot.modules.contains_key("service-a"));
+    }
+
+    #[test]
+    fn unregister_nonexistent_module_returns_false() {
+        let global = GlobalState::default();
+
+        let _module = global.register_module("service-a");
+
+        // Try to unregister a module that doesn't exist
+        let removed = global.unregister_module("service-b");
+        assert!(!removed, "Should return false when module doesn't exist");
+
+        // service-a should still be there
+        let snapshot = global.collect();
+        assert_eq!(snapshot.modules.len(), 1);
+        assert!(snapshot.modules.contains_key("service-a"));
+    }
+
+    #[test]
+    fn unregister_module_does_not_affect_global_write_counters() {
+        let global = GlobalState::default();
+
+        let producer = global.register_module("producer");
+        producer
+            .get_or_create_write("events")
+            .count
+            .fetch_add(100, Ordering::Relaxed);
+        global
+            .get_topic_write_counter("events")
+            .fetch_add(100, Ordering::Relaxed);
+
+        // Verify global counter is set
+        let counter = global.get_topic_write_counter("events");
+        assert_eq!(counter.load(Ordering::Relaxed), 100);
+
+        // Unregister the producer
+        global.unregister_module("producer");
+
+        // Global counter should still be 100
+        let counter = global.get_topic_write_counter("events");
+        assert_eq!(counter.load(Ordering::Relaxed), 100);
+    }
+
+    #[test]
+    fn can_reregister_after_unregister() {
+        let global = GlobalState::default();
+
+        // Register and record some metrics
+        let module1 = global.register_module("service");
+        module1
+            .get_or_create_read("topic")
+            .count
+            .fetch_add(50, Ordering::Relaxed);
+
+        let snapshot = global.collect();
+        assert_eq!(snapshot.modules.get("service").unwrap().reads.get("topic").unwrap().count, 50);
+
+        // Unregister
+        global.unregister_module("service");
+
+        // Re-register and verify metrics start fresh
+        let module2 = global.register_module("service");
+        let snapshot = global.collect();
+
+        // New module should have fresh state (count = 0)
+        let metrics = snapshot.modules.get("service").unwrap();
+        assert_eq!(metrics.reads.len(), 0, "Re-registered module should start with no topics");
+
+        // Add some new metrics
+        module2
+            .get_or_create_read("topic")
+            .count
+            .fetch_add(10, Ordering::Relaxed);
+
+        let snapshot = global.collect();
+        assert_eq!(snapshot.modules.get("service").unwrap().reads.get("topic").unwrap().count, 10);
+    }
+
+    #[test]
+    fn unregister_module_multiple_times_is_safe() {
+        let global = GlobalState::default();
+
+        global.register_module("service");
+
+        // First unregister should succeed
+        assert!(global.unregister_module("service"));
+
+        // Second unregister should return false
+        assert!(!global.unregister_module("service"));
+
+        // Third time for good measure
+        assert!(!global.unregister_module("service"));
+    }
+
 }

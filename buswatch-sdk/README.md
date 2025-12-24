@@ -110,6 +110,40 @@ This starts an HTTP server that Prometheus can scrape. Metrics available:
 
 Health check endpoints (`/health`, `/healthz`) are also available for Kubernetes probes.
 
+## Module Lifecycle
+
+### Registering Modules
+
+```rust
+let handle = instrumentor.register("my-service");
+```
+
+If a module with the same name already exists, `register()` returns a handle to the existing module.
+
+### Unregistering Modules
+
+When a module is no longer needed (e.g., a temporary worker, a completed task), you can unregister it:
+
+```rust
+// Unregister the module
+let removed = instrumentor.unregister("my-service");
+
+if removed {
+    println!("Module was successfully unregistered");
+} else {
+    println!("Module didn't exist");
+}
+```
+
+Unregistering a module:
+- Removes it from future snapshots
+- Clears all associated metrics
+- Returns `true` if the module existed, `false` otherwise
+- Can be safely called multiple times
+- Allows re-registration with fresh state
+
+**Note:** Existing `ModuleHandle` instances will continue to work after unregistration, but their metrics won't appear in snapshots unless the module is re-registered.
+
 ## Recording Metrics
 
 ### Basic Counting

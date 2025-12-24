@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **buswatch-tui**: CSV export format (#32)
+  - Press `E` (uppercase) to export current view to CSV format
+  - `--export-csv` CLI flag to export snapshot and exit
+  - CSV includes module name, topic, type (Read/Write), count, backlog, pending duration, rate, and health status
+  - Proper CSV escaping for special characters (commas, quotes, newlines)
+- **buswatch-sdk**: Module unregistration support (#20)
+  - `Instrumentor::unregister(name)` method to remove modules from internal state
+  - `GlobalState::unregister_module(name)` for module cleanup
+  - Returns `true` if module was found and removed, `false` otherwise
+  - Enables clean lifecycle management for temporary or dynamic modules
+  - Supports re-registration with fresh state after unregister
 - **buswatch-sdk**: Prometheus exposition format export (`prometheus` feature)
   - HTTP server serving metrics at configurable endpoint
   - All metrics include `module` and `topic` labels

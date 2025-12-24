@@ -79,6 +79,37 @@ impl Instrumentor {
         }
     }
 
+    /// Unregister a module and remove it from internal state.
+    ///
+    /// This removes the module and all its associated metrics from future snapshots.
+    /// Returns `true` if the module was found and removed, `false` if it didn't exist.
+    ///
+    /// Note: Any existing `ModuleHandle` instances for this module will continue to work
+    /// and accumulate metrics, but those metrics will not appear in snapshots unless
+    /// the module is re-registered.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The module name to unregister
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use buswatch_sdk::Instrumentor;
+    ///
+    /// let instrumentor = Instrumentor::new();
+    /// let handle = instrumentor.register("temp-worker");
+    ///
+    /// // ... use the handle ...
+    ///
+    /// // When done, unregister the module
+    /// let removed = instrumentor.unregister("temp-worker");
+    /// assert!(removed);
+    /// ```
+    pub fn unregister(&self, name: &str) -> bool {
+        self.state.unregister_module(name)
+    }
+
     /// Collect a snapshot of all current metrics.
     ///
     /// This is useful if you want to emit snapshots manually rather than
@@ -380,4 +411,187 @@ mod tests {
             Some(50)
         ); // 950 - 900
     }
+
+    #[test]
+    fn unregister_existing_module() {
+        let instrumentor = Instrumentor::new();
+
+        let handle = instrumentor.register("service-a");
+        handle.record_read("topic", 100);
+
+        // Verify module exists
+        let snapshot = instrumentor.collect();
+        assert_eq!(snapshot.modules.len(), 1);
+        assert!(snapshot.modules.contains_key("service-a"));
+
+        // Unregister the module
+        let removed = instrumentor.unregister("service-a");
+        assert!(removed, "Should return true when module exists");
+
+        // Verify module is gone
+        let snapshot = instrumentor.collect();
+        assert_eq!(snapshot.modules.len(), 0);
+        assert!(!snapshot.modules.contains_key("service-a"));
+    }
+
+    #[test]
+    fn unregister_nonexistent_module() {
+        let instrumentor = Instrumentor::new();
+
+        let _handle = instrumentor.register("service-a");
+
+        // Try to unregister a module that doesn't exist
+        let removed = instrumentor.unregister("service-b");
+        assert!(!removed, "Should return false when module doesn't exist");
+
+        // Original module should still be there
+        let snapshot = instrumentor.collect();
+        assert_eq!(snapshot.modules.len(), 1);
+        assert!(snapshot.modules.contains_key("service-a"));
+    }
+
+    #[test]
+    fn unregister_removes_metrics_from_snapshot() {
+        let instrumentor = Instrumentor::new();
+
+        let producer = instrumentor.register("producer");
+        let consumer = instrumentor.register("consumer");
+
+        producer.record_write("events", 100);
+        consumer.record_read("events", 50);
+
+        // Both modules present
+        let snapshot = instrumentor.collect();
+        assert_eq!(snapshot.modules.len(), 2);
+        assert_eq!(
+            snapshot.modules.get("producer").unwrap().writes.get("events").unwrap().count,
+            100
+        );
+
+        // Unregister producer
+        instrumentor.unregister("producer");
+
+        // Only consumer remains
+        let snapshot = instrumentor.collect();
+        assert_eq!(snapshot.modules.len(), 1);
+        assert!(snapshot.modules.contains_key("consumer"));
+        assert!(!snapshot.modules.contains_key("producer"));
+    }
+
+    #[test]
+    fn can_reregister_after_unregister() {
+        let instrumentor = Instrumentor::new();
+
+        // Register and record metrics
+        let handle1 = instrumentor.register("worker");
+        handle1.record_read("jobs", 50);
+
+        let snapshot = instrumentor.collect();
+        assert_eq!(
+            snapshot.modules.get("worker").unwrap().reads.get("jobs").unwrap().count,
+            50
+        );
+
+        // Unregister
+        instrumentor.unregister("worker");
+
+        // Re-register - should get fresh state
+        let handle2 = instrumentor.register("worker");
+        let snapshot = instrumentor.collect();
+
+        // New module should start with empty metrics
+        let metrics = snapshot.modules.get("worker").unwrap();
+        assert_eq!(metrics.reads.len(), 0, "Re-registered module should have no topics");
+
+        // Add new metrics
+        handle2.record_read("jobs", 25);
+
+        let snapshot = instrumentor.collect();
+        assert_eq!(
+            snapshot.modules.get("worker").unwrap().reads.get("jobs").unwrap().count,
+            25
+        );
+    }
+
+    #[test]
+    fn old_handle_still_works_after_unregister() {
+        let instrumentor = Instrumentor::new();
+
+        let handle = instrumentor.register("service");
+        handle.record_write("events", 100);
+
+        // Unregister the module
+        instrumentor.unregister("service");
+
+        // Handle can still record metrics (to its internal state)
+        handle.record_write("events", 50);
+
+        // But they won't appear in snapshots
+        let snapshot = instrumentor.collect();
+        assert_eq!(snapshot.modules.len(), 0);
+
+        // Re-registering creates a new module with fresh state
+        let new_handle = instrumentor.register("service");
+        let snapshot = instrumentor.collect();
+
+        // The new module starts fresh (old handle's metrics are not visible)
+        let metrics = snapshot.modules.get("service").unwrap();
+        assert_eq!(metrics.writes.len(), 0);
+
+        // But the old handle's internal state is still at 150
+        // (this is implementation detail - old handle keeps its Arc to old state)
+        new_handle.record_write("events", 10);
+        let snapshot = instrumentor.collect();
+        assert_eq!(
+            snapshot.modules.get("service").unwrap().writes.get("events").unwrap().count,
+            10
+        );
+    }
+
+    #[test]
+    fn unregister_one_module_does_not_affect_others() {
+        let instrumentor = Instrumentor::new();
+
+        let service_a = instrumentor.register("service-a");
+        let service_b = instrumentor.register("service-b");
+        let service_c = instrumentor.register("service-c");
+
+        service_a.record_read("topic", 10);
+        service_b.record_read("topic", 20);
+        service_c.record_read("topic", 30);
+
+        // Unregister service-b
+        instrumentor.unregister("service-b");
+
+        // service-a and service-c should remain
+        let snapshot = instrumentor.collect();
+        assert_eq!(snapshot.modules.len(), 2);
+        assert!(snapshot.modules.contains_key("service-a"));
+        assert!(!snapshot.modules.contains_key("service-b"));
+        assert!(snapshot.modules.contains_key("service-c"));
+
+        assert_eq!(
+            snapshot.modules.get("service-a").unwrap().reads.get("topic").unwrap().count,
+            10
+        );
+        assert_eq!(
+            snapshot.modules.get("service-c").unwrap().reads.get("topic").unwrap().count,
+            30
+        );
+    }
+
+    #[test]
+    fn unregister_multiple_times_is_safe() {
+        let instrumentor = Instrumentor::new();
+
+        instrumentor.register("service");
+
+        // First unregister succeeds
+        assert!(instrumentor.unregister("service"));
+
+        // Subsequent unregisters return false
+        assert!(!instrumentor.unregister("service"));
+        assert!(!instrumentor.unregister("service"));
+    }
+
 }
