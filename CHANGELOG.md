@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All metrics include `module` and `topic` labels
   - Health check endpoints (`/health`, `/healthz`) for Kubernetes probes
   - Metrics: read/write counts, backlog, pending seconds, rates
+- **buswatch-tui**: CSV export format (press `E` for CSV, `e` for JSON)
 
 ## [0.1.0] - 2025-12-21
 

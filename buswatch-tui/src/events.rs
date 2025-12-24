@@ -127,10 +127,23 @@ pub fn handle_key_event(app: &mut App, key: KeyEvent) {
             }
         }
 
-        // Export
+        // Export JSON
         KeyCode::Char('e') => {
             let export_path = std::path::PathBuf::from("monitor_export.json");
             match app.export_state(&export_path) {
+                Ok(()) => {
+                    app.set_status_message(format!("Exported to {}", export_path.display()));
+                }
+                Err(e) => {
+                    app.set_status_message(format!("Export failed: {}", e));
+                }
+            }
+        }
+
+        // Export CSV
+        KeyCode::Char('E') => {
+            let export_path = std::path::PathBuf::from("monitor_export.csv");
+            match app.export_state_csv(&export_path) {
                 Ok(()) => {
                     app.set_status_message(format!("Exported to {}", export_path.display()));
                 }
