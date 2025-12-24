@@ -173,6 +173,7 @@ let instrumentor = Instrumentor::builder()
 | `tokio` | Async runtime support (enabled by default) |
 | `otel` | OpenTelemetry OTLP export |
 | `prometheus` | Prometheus metrics endpoint |
+| `tracing` | Structured logging via tracing crate |
 
 ### OpenTelemetry Integration
 
@@ -216,6 +217,40 @@ let instrumentor = Instrumentor::builder()
 
 instrumentor.start();
 // Metrics now available at http://localhost:9090/metrics
+```
+
+### Tracing Integration
+
+Enable the `tracing` feature for structured logging:
+
+```toml
+[dependencies]
+buswatch-sdk = { version = "0.1", features = ["tracing"] }
+```
+
+```rust
+use tracing_subscriber;
+
+fn main() {
+    // Initialize a tracing subscriber
+    tracing_subscriber::fmt::init();
+
+    // Now buswatch operations emit structured logs
+    let instrumentor = buswatch_sdk::Instrumentor::new();
+    let handle = instrumentor.register("my-service"); // DEBUG log
+    handle.record_read("events", 10); // TRACE log
+}
+```
+
+**Log levels:**
+- `TRACE`: Individual `record_read`/`record_write` calls (high volume)
+- `DEBUG`: Module registration, snapshot collection
+- `INFO`: Background emission start/stop
+- `WARN`: Emission failures
+
+Control verbosity with the `RUST_LOG` environment variable:
+```bash
+RUST_LOG=buswatch_sdk=debug cargo run
 ```
 
 ## Thread Safety
