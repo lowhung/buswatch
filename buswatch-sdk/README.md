@@ -83,6 +83,33 @@ use buswatch_sdk::Output;
 let output = Output::otlp("http://localhost:4317");
 ```
 
+### Prometheus
+
+Serves metrics in Prometheus exposition format via HTTP (requires `prometheus` feature):
+
+```rust
+use buswatch_sdk::{Output, prometheus::PrometheusConfig};
+
+let config = PrometheusConfig::builder()
+    .listen_addr("0.0.0.0:9090")
+    .metrics_path("/metrics")
+    .namespace("myapp")  // optional prefix for all metrics
+    .build();
+
+let output = Output::prometheus(config);
+```
+
+This starts an HTTP server that Prometheus can scrape. Metrics available:
+- `buswatch_read_count` - Total messages read (counter)
+- `buswatch_write_count` - Total messages written (counter)
+- `buswatch_read_backlog` - Unread message count (gauge)
+- `buswatch_read_pending_seconds` - Read wait time (gauge)
+- `buswatch_write_pending_seconds` - Write wait time (gauge)
+- `buswatch_read_rate_per_second` - Read throughput (gauge)
+- `buswatch_write_rate_per_second` - Write throughput (gauge)
+
+Health check endpoints (`/health`, `/healthz`) are also available for Kubernetes probes.
+
 ## Recording Metrics
 
 ### Basic Counting
@@ -145,6 +172,7 @@ let instrumentor = Instrumentor::builder()
 |---------|-------------|
 | `tokio` | Async runtime support (enabled by default) |
 | `otel` | OpenTelemetry OTLP export |
+| `prometheus` | Prometheus metrics endpoint |
 
 ### OpenTelemetry Integration
 
@@ -164,6 +192,31 @@ let instrumentor = Instrumentor::builder()
 ```
 
 This allows buswatch metrics to flow into Grafana, Datadog, or any OTLP-compatible backend.
+
+### Prometheus Integration
+
+Enable the `prometheus` feature for Prometheus scraping:
+
+```toml
+[dependencies]
+buswatch-sdk = { version = "0.1", features = ["prometheus"] }
+```
+
+```rust
+use buswatch_sdk::{Instrumentor, Output, prometheus::PrometheusConfig};
+
+let config = PrometheusConfig::builder()
+    .listen_addr("0.0.0.0:9090")
+    .metrics_path("/metrics")
+    .build();
+
+let instrumentor = Instrumentor::builder()
+    .output(Output::prometheus(config))
+    .build();
+
+instrumentor.start();
+// Metrics now available at http://localhost:9090/metrics
+```
 
 ## Thread Safety
 
