@@ -17,6 +17,7 @@ default = ["tokio"]
 tokio = ["dep:tokio"]
 otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", "tokio"]
 prometheus = ["tokio", "dep:hyper", "dep:hyper-util", "dep:http-body-util"]
+tracing = ["dep:tracing"]
 
 [dependencies]
 buswatch-types = { path = "../buswatch-types", features = ["serde"] }
@@ -35,6 +36,9 @@ opentelemetry-otlp = { version = "0.31", features = ["metrics", "http-proto", "r
 hyper = { version = "1", features = ["server", "http1"], optional = true }
 hyper-util = { version = "0.1", features = ["tokio"], optional = true }
 http-body-util = { version = "0.1", optional = true }
+
+# Tracing (optional, for structured logging)
+tracing = { version = "0.1", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }

@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All metrics include `module` and `topic` labels
   - Health check endpoints (`/health`, `/healthz`) for Kubernetes probes
   - Metrics: read/write counts, backlog, pending seconds, rates
+- **buswatch-sdk**: Tracing integration for structured logging (`tracing` feature)
+  - TRACE level logs for record_read/record_write operations
+  - DEBUG level logs for module registration and snapshot collection
+  - INFO/WARN level logs for background emission lifecycle and errors
+  - Zero overhead when feature is disabled
 
 ## [0.1.0] - 2025-12-21
 
