@@ -49,6 +49,9 @@ mod state;
 #[cfg(feature = "otel")]
 pub mod otel;
 
+#[cfg(feature = "prometheus")]
+pub mod prometheus;
+
 pub use handle::ModuleHandle;
 pub use instrumentor::{Instrumentor, InstrumentorBuilder};
 pub use output::Output;

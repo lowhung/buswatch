@@ -92,6 +92,8 @@ impl Instrumentor {
     /// This spawns a tokio task that periodically collects and emits
     /// snapshots to all configured outputs.
     ///
+    /// For Prometheus outputs, this also starts the HTTP server to serve metrics.
+    ///
     /// Returns a handle that can be used to stop the emission.
     #[cfg(feature = "tokio")]
     pub fn start(&self) -> EmissionHandle {
@@ -101,6 +103,14 @@ impl Instrumentor {
         let state = self.state.clone();
         let outputs = self.outputs.clone();
         let interval = self.interval;
+
+        // Start Prometheus HTTP servers for any Prometheus outputs
+        #[cfg(feature = "prometheus")]
+        for output in outputs.iter() {
+            if let Output::Prometheus(exporter) = output {
+                exporter.start_server();
+            }
+        }
 
         tokio::spawn(async move {
             let mut interval_timer = tokio::time::interval(interval);

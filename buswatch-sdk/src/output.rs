@@ -4,11 +4,14 @@ use std::path::PathBuf;
 
 use buswatch_types::Snapshot;
 
-#[cfg(feature = "otel")]
+#[cfg(any(feature = "otel", feature = "prometheus"))]
 use std::sync::Arc;
 
 #[cfg(feature = "otel")]
 use crate::otel::{OtelConfig, OtelExporter};
+
+#[cfg(feature = "prometheus")]
+use crate::prometheus::{PrometheusConfig, PrometheusExporter};
 
 /// Output destination for snapshots.
 ///
@@ -36,6 +39,12 @@ pub enum Output {
     /// Use `Output::otel()` to create this variant.
     #[cfg(feature = "otel")]
     Otel(Arc<OtelExporter>),
+
+    /// Serve metrics in Prometheus exposition format via HTTP.
+    ///
+    /// Use `Output::prometheus()` to create this variant.
+    #[cfg(feature = "prometheus")]
+    Prometheus(Arc<PrometheusExporter>),
 }
 
 impl Output {
@@ -111,6 +120,30 @@ impl Output {
         Ok(Output::Otel(Arc::new(exporter)))
     }
 
+    /// Create a Prometheus HTTP endpoint output.
+    ///
+    /// This serves metrics in Prometheus exposition format at the configured
+    /// HTTP endpoint, allowing Prometheus to scrape metrics.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use buswatch_sdk::Output;
+    /// use buswatch_sdk::prometheus::PrometheusConfig;
+    ///
+    /// let config = PrometheusConfig::builder()
+    ///     .listen_addr("0.0.0.0:9090")
+    ///     .metrics_path("/metrics")
+    ///     .build();
+    ///
+    /// let output = Output::prometheus(config);
+    /// ```
+    #[cfg(feature = "prometheus")]
+    pub fn prometheus(config: PrometheusConfig) -> Self {
+        let exporter = PrometheusExporter::new(config);
+        Output::Prometheus(Arc::new(exporter))
+    }
+
     /// Emit a snapshot to this output.
     #[cfg(feature = "tokio")]
     pub(crate) async fn emit(&self, snapshot: &Snapshot) -> std::io::Result<()> {
@@ -137,6 +170,11 @@ impl Output {
             #[cfg(feature = "otel")]
             Output::Otel(exporter) => {
                 // Record metrics to OpenTelemetry
+                exporter.record(snapshot);
+            }
+            #[cfg(feature = "prometheus")]
+            Output::Prometheus(exporter) => {
+                // Update the latest snapshot for Prometheus scraping
                 exporter.record(snapshot);
             }
         }

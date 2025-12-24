@@ -127,6 +127,7 @@ See [buswatch-types](/buswatch-types) for the full schema and serialization opti
 - **Multiple data sources**: files, TCP streams, message bus subscriptions
 - **Instrumentation SDK** for Rust applications
 - **Adapters** for RabbitMQ, Kafka, and NATS
+- **Prometheus** metrics endpoint for scraping
 - **OpenTelemetry** export support
 - **JSON and CBOR** serialization
 
