@@ -38,3 +38,20 @@ http-body-util = { version = "0.1", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "record_operations"
+harness = false
+
+[[bench]]
+name = "snapshot_collection"
+harness = false
+
+[[bench]]
+name = "concurrent_throughput"
+harness = false
+
+[[bench]]
+name = "serialization"
+harness = false

@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **buswatch-sdk**: Performance benchmarks with Criterion.rs (#17)
+  - Benchmark suite for `record_read()` and `record_write()` hot path latency
+  - Benchmark suite for `collect()` snapshot generation with varying module/topic counts
+  - Benchmark suite for concurrent increment throughput across multiple threads
+  - Benchmark suite for JSON serialization and deserialization performance
+  - HTML reports generated in `target/criterion/` for detailed analysis
 - **buswatch-sdk**: Prometheus exposition format export (`prometheus` feature)
   - HTTP server serving metrics at configurable endpoint
   - All metrics include `module` and `topic` labels
