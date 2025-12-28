@@ -225,6 +225,7 @@ pub fn render_help(frame: &mut Frame, app: &App, area: Rect) {
         )]),
         Line::from("  r         Reload data"),
         Line::from("  e         Export to JSON"),
+        Line::from("  E         Export to CSV"),
         Line::from("  q         Quit"),
         Line::from(""),
         Line::from(vec![Span::styled(

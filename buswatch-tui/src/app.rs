@@ -533,4 +533,65 @@ impl App {
 
         Ok(())
     }
+
+    /// Export current state to a CSV file.
+    pub fn export_state_csv(&self, path: &std::path::Path) -> anyhow::Result<()> {
+        use crate::data::duration::format_duration;
+        use std::io::Write;
+
+        let Some(ref data) = self.data else {
+            anyhow::bail!("No data to export");
+        };
+
+        let mut output = String::new();
+
+        // CSV header
+        output.push_str("Module,Topic,Type,Count,Backlog,Pending,Health\n");
+
+        // Write rows for each module's topics
+        for module in &data.modules {
+            // Read topics
+            for read in &module.reads {
+                output.push_str(&format!(
+                    "{},{},{},{},{},{},{}\n",
+                    csv_escape(&module.name),
+                    csv_escape(&read.topic),
+                    "Read",
+                    read.read,
+                    read.unread.map(|u| u.to_string()).unwrap_or_default(),
+                    read.pending_for.map(format_duration).unwrap_or_default(),
+                    read.status.symbol()
+                ));
+            }
+
+            // Write topics
+            for write in &module.writes {
+                output.push_str(&format!(
+                    "{},{},{},{},{},{},{}\n",
+                    csv_escape(&module.name),
+                    csv_escape(&write.topic),
+                    "Write",
+                    write.written,
+                    "", // writes don't have backlog
+                    write.pending_for.map(format_duration).unwrap_or_default(),
+                    write.status.symbol()
+                ));
+            }
+        }
+
+        let mut file = std::fs::File::create(path)?;
+        file.write_all(output.as_bytes())?;
+
+        Ok(())
+    }
+}
+
+/// Escape a string for CSV format.
+/// Wraps in quotes if the string contains comma, quote, or newline.
+fn csv_escape(s: &str) -> String {
+    if s.contains(',') || s.contains('"') || s.contains('\n') {
+        format!("\"{}\"", s.replace('"', "\"\""))
+    } else {
+        s.to_string()
+    }
 }
