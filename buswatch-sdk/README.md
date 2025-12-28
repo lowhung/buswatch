@@ -244,3 +244,26 @@ The SDK is designed to have minimal overhead:
 - Lazy snapshot collection (only when emitting)
 - Configurable emission interval to control I/O frequency
 - No allocations on the hot path (record_read/write)
+
+### Benchmarks
+
+The SDK includes comprehensive benchmarks using [Criterion.rs](https://github.com/bheisler/criterion.rs) to measure performance:
+
+```bash
+# Run all benchmarks
+cargo bench
+
+# Run specific benchmark suite
+cargo bench --bench record_operations
+cargo bench --bench snapshot_collection
+cargo bench --bench concurrent_throughput
+cargo bench --bench serialization
+```
+
+Benchmark suites:
+- **record_operations**: Measures latency of `record_read()` and `record_write()` operations
+- **snapshot_collection**: Measures `collect()` performance with varying module and topic counts
+- **concurrent_throughput**: Measures throughput under concurrent access from multiple threads
+- **serialization**: Measures JSON serialization and deserialization performance
+
+Results are saved to `target/criterion/` with HTML reports for detailed analysis.
