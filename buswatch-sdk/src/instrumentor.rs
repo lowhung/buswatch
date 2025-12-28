@@ -71,6 +71,9 @@ impl Instrumentor {
     ///
     /// * `name` - The module name (e.g., "order-processor", "notification-sender")
     pub fn register(&self, name: &str) -> ModuleHandle {
+        #[cfg(feature = "tracing")]
+        tracing::debug!(module = name, "Registering module");
+
         let module_state = self.state.register_module(name);
         ModuleHandle {
             state: module_state,
@@ -84,6 +87,9 @@ impl Instrumentor {
     /// This is useful if you want to emit snapshots manually rather than
     /// using the background emission.
     pub fn collect(&self) -> buswatch_types::Snapshot {
+        #[cfg(feature = "tracing")]
+        let _span = tracing::debug_span!("collect_snapshot").entered();
+
         self.state.collect()
     }
 
@@ -113,6 +119,9 @@ impl Instrumentor {
         }
 
         tokio::spawn(async move {
+            #[cfg(feature = "tracing")]
+            tracing::info!("Background emission started");
+
             let mut interval_timer = tokio::time::interval(interval);
             let mut stop_rx = stop_rx;
 
@@ -120,12 +129,22 @@ impl Instrumentor {
                 tokio::select! {
                     _ = interval_timer.tick() => {
                         let snapshot = state.collect();
+
+                        #[cfg(feature = "tracing")]
+                        tracing::debug!(modules = snapshot.modules.len(), "Emitting snapshot");
+
                         for output in outputs.iter() {
-                            let _ = output.emit(&snapshot).await;
+                            if let Err(e) = output.emit(&snapshot).await {
+                                #[cfg(feature = "tracing")]
+                                tracing::warn!(error = %e, "Failed to emit snapshot");
+                                let _ = e; // suppress unused warning when tracing disabled
+                            }
                         }
                     }
                     _ = stop_rx.changed() => {
                         if *stop_rx.borrow() {
+                            #[cfg(feature = "tracing")]
+                            tracing::info!("Background emission stopped");
                             break;
                         }
                     }

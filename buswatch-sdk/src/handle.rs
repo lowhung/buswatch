@@ -45,6 +45,9 @@ impl ModuleHandle {
     /// * `topic` - The topic name
     /// * `count` - Number of messages read
     pub fn record_read(&self, topic: &str, count: u64) {
+        #[cfg(feature = "tracing")]
+        tracing::trace!(module = %self.name, topic = topic, count = count, "record_read");
+
         let read_state = self.state.get_or_create_read(topic);
         read_state.count.fetch_add(count, Ordering::Relaxed);
     }
@@ -56,6 +59,9 @@ impl ModuleHandle {
     /// * `topic` - The topic name
     /// * `count` - Number of messages written
     pub fn record_write(&self, topic: &str, count: u64) {
+        #[cfg(feature = "tracing")]
+        tracing::trace!(module = %self.name, topic = topic, count = count, "record_write");
+
         let write_state = self.state.get_or_create_write(topic);
         write_state.count.fetch_add(count, Ordering::Relaxed);
 
